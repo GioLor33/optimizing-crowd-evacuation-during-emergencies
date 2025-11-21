@@ -6,12 +6,6 @@ class Environment:
         assert dimensions[0] > 0 and dimensions[1] > 0, "Dimensions must be positive integers"
         self.__dimensions = dimensions
         
-        # in self.grid we have:
-        # -1 - safety exits
-        # 0 - empty cell
-        # 1 - wall/obstacle
-        self.__grid = [[0 for _ in range(dimensions[1])] for _ in range(dimensions[0])]
-        
         self.__exits = set()
         if exits != [None]:
             self.set_safety_exits(exits)
@@ -21,60 +15,60 @@ class Environment:
             self.set_walls(walls)
 
 
-    def set_walls(self, positions):
-        # If a wall is set on an exit, the wall is not entered into the environment
-        if isinstance(positions, tuple):
-            if not positions in self.__exits:
-                self.__grid[positions[0]][positions[1]] = 1
-                self.__walls.add(positions)
-        if isinstance(positions, list):
-            for pos in positions:
-                if not pos in self.__exits:
-                    self.__grid[pos[0]][pos[1]] = 1
-                    self.__walls.add(pos)
+    def set_walls(self, list_of_walls):
+        if isinstance(list_of_walls, list):
+            for wall in list_of_walls:
+                assert isinstance(wall, list) and len(wall) == 2, "Wall positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
+                for point in wall:
+                    assert isinstance(point, tuple) and len(point) == 2, "Wall positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
+                self.__walls.add((tuple(wall[0]), tuple(wall[1])))
         else:
-            raise ValueError("Positions must be provided as a tuple or as a list of tuples")     
+            raise ValueError("Positions must be provided as a tuple or as a list of tuples")  
+           
+        # TODO: how do we manage if a wall is added on top of an exit? Should it overwrite the exit?
+        # I think a check is actually needed when adding walls or exits to avoid conflicts.
 
     def get_walls(self):
         return self.__walls
     
     def add_external_walls(self):
-        rows, cols = self.__dimensions
+        width, height = self.__dimensions
         # top and bottom rows
-        self.set_walls([(0, j) for j in range(cols)])
-        self.set_walls([(rows - 1, j) for j in range(cols)])
-        # left and right columns
-        self.set_walls([(i, 0) for i in range(rows)])
-        self.set_walls([(i, cols - 1) for i in range(rows)])
+        self.set_walls([[(0, 0), (0, height)]])
+        self.set_walls([[(0, 0), (width, 0)]])
+        self.set_walls([[(0, height), (width, height)]])
+        self.set_walls([[(width, 0), (width, height)]])
     
-    def set_safety_exits(self, positions):
-        # TODO: should we add a length=(x,y) parameter to specify exit size in x and y direction? In that case, we need to assert that len(length)==len(positions)
-        if isinstance(positions, tuple):
-            self.__grid[positions[0]][positions[1]] = -1
-            self.__exits.add(positions)
-        if isinstance(positions, list):
-            for pos in positions:
-                self.__grid[pos[0]][pos[1]] = -1
-                self.__exits.add(pos)
+    def set_safety_exits(self, list_of_exits):
+        if isinstance(list_of_exits, list):
+            for exit in list_of_exits:
+                assert isinstance(exit, list) and len(exit) == 2, "Safety exit positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
+                for point in exit:
+                    assert isinstance(point, tuple) and len(point) == 2, "Safety exit positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
+                self.__exits.add((tuple(exit[0]), tuple(exit[1])))
         else:
-            raise ValueError("Safety exits must be provided as a tuple or as a list of tuples")
+            raise ValueError("Safety exit positions must be provided as a tuple or as a list of tuples")  
              
     def get_safety_exits(self):
         return self.__exits
 
     def remove_safety_exit(self, position):
         if position in self.__exits:
-            self.__grid[position[0]][position[1]] = 0
             self.__exits.remove(position)
     
     def get_dimensions(self):
         return self.__dimensions
     
-    def get_grid(self):
-        return self.__grid
+    def get_width(self):
+        return self.__dimensions[0]
+    
+    def get_height(self):
+        return self.__dimensions[1]
 
     def __str__(self):
-        return "\n".join(
-            " ".join(f"{cell:2d}" for cell in row)
-            for row in self.__grid
-        )
+        return "Environment '{}': \n > dimensions={}, \n > # of walls={}, \n > # of exits={}".format(
+                self.name,
+                self.__dimensions,
+                len(self.__walls),
+                len(self.__exits),
+            )

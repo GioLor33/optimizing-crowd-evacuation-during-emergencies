@@ -21,7 +21,7 @@ class CrowdSimulator:
         w, h = self.env.get_dimensions()
         for i in range(N - 1, -1, -1):
             agent = self.env.agents[i]
-            agent.update(snapshot)
+            agent.update(snapshot, dt)
             hit_exit = self.env.check_something_reached(agent.prev_pos, agent.pos, "exit")
             x, y = agent.pos
             is_out_of_bounds = (x >= w) or (x <= 0) or (y >= h) or (y <= 0)

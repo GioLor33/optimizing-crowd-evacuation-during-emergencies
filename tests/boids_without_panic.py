@@ -17,11 +17,16 @@ async def main_program(visualizer, world):
     loop = asyncio.get_running_loop()
     
     num_agents = 10 # TODO: read this from config file
+    dt = 0.05  # TODO: read this from config file
     sim = CrowdSimulator(world, num_agents=num_agents)
     while True:  # Main executions
+        start = time.time()
+        sim.update(dt)
+        end = time.time()
         
-        sim.update()
-        time.sleep(0.05)  
+        if (end - start) < dt:
+            time.sleep(dt - (end - start))
+            
         if len(sim.agents_escaped) == num_agents:
             break
         await asyncio.sleep(0)

@@ -1,3 +1,7 @@
+from environments.utils import segments_intersect
+import random
+import numpy as np
+
 class Environment:
     def __init__(self, name, dimensions=(10,10), walls=[None], exits=[None]):
         self.name = name
@@ -13,7 +17,17 @@ class Environment:
         self.__walls = set()
         if walls != [None]:
             self.set_walls(walls)
-
+            
+        self.agents = []
+        
+    def add_agent(self, agent):
+        self.agents.append(agent)
+        
+    def set_agents(self, agents):
+        self.agents = agents
+    
+    def get_agents(self):
+        return self.agents
 
     def set_walls(self, list_of_walls):
         if isinstance(list_of_walls, list):
@@ -25,9 +39,6 @@ class Environment:
         else:
             raise ValueError("Positions must be provided as a tuple or as a list of tuples")  
            
-        # TODO: how do we manage if a wall is added on top of an exit? Should it overwrite the exit?
-        # I think a check is actually needed when adding walls or exits to avoid conflicts.
-
     def get_walls(self):
         return self.__walls
     
@@ -72,3 +83,53 @@ class Environment:
                 len(self.__walls),
                 len(self.__exits),
             )
+        
+    def check_something_reached(self, prev_pos, pos, name):
+        if name == "exit":
+            to_check = self.__exits
+        elif name == "wall":
+            to_check = self.__walls
+        else:
+            raise ValueError("Unknown name provided to check_something_reached: {}".format(name))
+        
+        if pos is None or prev_pos is None:
+            raise ValueError("Positions provided to check_something_reached cannot be None")
+        
+        # Agent out of the environment bounds
+        if pos[0] < 0 or pos[0] > self.__dimensions[0] or pos[1] < 0 or pos[1] > self.__dimensions[1]:
+            return None
+        
+        for item in to_check:
+            if segments_intersect(prev_pos, pos,
+                                  item[0], item[1]):
+                return item
+        return None
+    
+    def check_is_position_free(self, position):
+        for wall in self.__walls:
+            if segments_intersect(position, position,
+                                  wall[0], wall[1]):
+                return False
+        for exit in self.__exits:
+            if segments_intersect(position, position,
+                                  exit[0], exit[1]):
+                return False
+        return True
+    
+    ###########################################
+    
+    def get_random_spawn(self):
+        gx = random.uniform(1, self.__dimensions[0] - 2)
+        gy = random.uniform(1, self.__dimensions[1] - 2)
+        if self.check_is_position_free((gx, gy)):
+            return (gx, gy)
+
+    def get_random_exit(self):
+        if not self.__exits:
+            raise ValueError("No exits defined in the environment")
+        A, B = random.choice(list(self.__exits))
+        point = (
+            (A[0] + B[0]) / 2,
+            (A[1] + B[1]) / 2
+        )
+        return point

@@ -27,13 +27,13 @@ class Visualizer:
     def create_drawing(self):
         begin_drawing()
         
-        # clear_background(self.background)
+        clear_background(self.background)
         self.add_title()
         self.add_legend()
         
         # Add functions to show "moving" things on screen
         self.draw_environment()
-        # self.draw_agents()
+        self.draw_agents()
         #self.add_env_description()
         
         end_drawing()
@@ -83,6 +83,20 @@ class Visualizer:
             self.env_to_screen(e_ending_pos)[1], 
             GREEN
         )
+        
+    def draw_agents(self):
+        agents = self.environment.get_agents()
+        if agents is None:
+            return
+        
+        for agent in agents:
+            a_pos = agent.get_position()
+            draw_circle(
+                int(self.env_to_screen((a_pos[0], a_pos[1]))[0]), 
+                int(self.env_to_screen((a_pos[0], a_pos[1]))[1]), 
+                max(2, int(3 * self.scale_env / 10)),  # radius scaled to environment size
+                BLUE
+            )
         
     def add_title(self):
         # the title is centered at the top of the window

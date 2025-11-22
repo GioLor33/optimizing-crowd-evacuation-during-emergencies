@@ -45,23 +45,48 @@ class BoidsAgent (Agent):
         steering = desired - self.vel
         return self._limit_vector(steering, self.max_force)
 
-    def _avoid_walls(self):
-        if np.linalg.norm(self.vel) == 0: return np.zeros(2)
+    # def _avoid_walls(self):
+    #     if np.linalg.norm(self.vel) == 0: return np.zeros(2)
+    #
+    #     vel_versor = self.vel / np.linalg.norm(self.vel)
+    #     ahead_pos = self.pos + vel_versor * WALL_AVOID_DISTANCE
+    #
+    #     wall = self.env.check_something_reached(self.pos, ahead_pos, "wall")
+    #     if wall is not None:
+    #         # intersection_with_wall = wall_intersection_point(self.pos, ahead_pos, wall[0], wall[1])
+    #         # flee_dir = ahead_pos - intersection_with_wall
+    #         # if np.linalg.norm(flee_dir) > 0:
+    #         #     flee_dir = (flee_dir / np.linalg.norm(flee_dir)) * self.max_speed
+    #         # steering = flee_dir - self.vel
+    #
+    #         steering = vel_versor * (self.max_speed - np.linalg.norm(self.vel))
+    #
+    #         return self._limit_vector(steering, self.max_force * 2)
+    #
+    #     return np.zeros(2)
 
+    def _avoid_walls(self):
+        # If not moving, nothing to avoid
+        if np.linalg.norm(self.vel) == 0: return np.zeros(2)
         vel_versor = self.vel / np.linalg.norm(self.vel)
         ahead_pos = self.pos + vel_versor * WALL_AVOID_DISTANCE
-
         wall = self.env.check_something_reached(self.pos, ahead_pos, "wall")
         if wall is not None:
-            # intersection_with_wall = wall_intersection_point(self.pos, ahead_pos, wall[0], wall[1])
-            # flee_dir = ahead_pos - intersection_with_wall
-            # if np.linalg.norm(flee_dir) > 0:
-            #     flee_dir = (flee_dir / np.linalg.norm(flee_dir)) * self.max_speed
-            # steering = flee_dir - self.vel
-            
-            steering = vel_versor * (self.max_speed - np.linalg.norm(self.vel))
-            
-            return self._limit_vector(steering, self.max_force * 2)
+            p1 = np.array(wall[0])
+            p2 = np.array(wall[1])
+            wall_vector = p2 - p1
+            normal = np.array([-wall_vector[1], wall_vector[0]])
+            norm_length = np.linalg.norm(normal)
+            if norm_length > 0:
+                normal = normal / norm_length  # Normalize
+            to_agent = self.pos - p1
+            if np.dot(to_agent, normal) < 0:
+                normal = -normal
+            overshoot = ahead_pos - self.pos
+            distance_to_wall = np.linalg.norm(overshoot)
+            force_magnitude = self.max_force * 2
+
+            return normal * force_magnitude
 
         return np.zeros(2)
 
@@ -99,26 +124,47 @@ class BoidsAgent (Agent):
 
         return sep, ali, coh
 
+    # def _check_and_resolve_collision(self):
+    #     wall = self.env.check_something_reached(self.prev_pos, self.pos, "wall")
+    #     if wall is not None:
+    #         wall_center = wall_intersection_point(self.prev_pos, self.pos, wall[0], wall[1])
+    #         penetration_vector = self.pos - wall_center
+    #         min_distance_to_exit = 2.0 + AGENT_SIZE
+    #         current_distance = np.linalg.norm(penetration_vector)
+    #
+    #         if current_distance < min_distance_to_exit:
+    #             overlap = min_distance_to_exit - current_distance
+    #
+    #             if current_distance > 0:
+    #                 push_direction = penetration_vector / current_distance
+    #                 self.pos += push_direction * overlap
+    #                 self.vel = self.vel - 2 * np.dot(self.vel, push_direction) * push_direction
+    #                 # self.vel *= 0.8
+    #                 return True
+    #     return False
+
     def _check_and_resolve_collision(self):
         wall = self.env.check_something_reached(self.prev_pos, self.pos, "wall")
         if wall is not None:
             wall_center = wall_intersection_point(self.prev_pos, self.pos, wall[0], wall[1])
             penetration_vector = self.pos - wall_center
-            min_distance_to_exit = 2.0 + AGENT_SIZE
+            safe_distance = AGENT_SIZE + 0.5
             current_distance = np.linalg.norm(penetration_vector)
-
-            if current_distance < min_distance_to_exit:
-                overlap = min_distance_to_exit - current_distance
-
-                if current_distance > 0:
-                    push_direction = penetration_vector / current_distance
-                    self.pos += push_direction * overlap
-                    self.vel = self.vel - 2 * np.dot(self.vel, push_direction) * push_direction
-                    # self.vel *= 0.8
-                    return True
+            if current_distance < safe_distance:
+                if current_distance == 0:
+                    push_dir = -self.vel / np.linalg.norm(self.vel)
+                    overlap = safe_distance
+                else:
+                    push_dir = penetration_vector / current_distance
+                    overlap = safe_distance - current_distance
+                self.pos += push_dir * overlap
+                vel_dot_normal = np.dot(self.vel, push_dir)
+                if vel_dot_normal < 0:
+                    self.vel -= push_dir * vel_dot_normal
+                return True
         return False
 
-    def update(self, agents_snapshot):
+    def update(self, agents_snapshot , dt):
         self.acc *= 0.0
         self.prev_pos = self.pos.copy()
 
@@ -135,9 +181,9 @@ class BoidsAgent (Agent):
             self.acc += (f_ali * W_ALIGN)
             self.acc += (f_coh * W_COHERE)
 
-        self.vel += self.acc
+        self.vel += self.acc * dt
         self.vel = self._limit_vector(self.vel, self.max_speed)
-        self.pos += self.vel
+        self.pos += self.vel * dt
         self._check_and_resolve_collision()
         
         #Here we are scaling position such that agents stay within bounds

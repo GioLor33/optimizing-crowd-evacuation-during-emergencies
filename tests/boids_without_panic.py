@@ -34,8 +34,8 @@ async def initialize_main():
     env = Environment(
         name="Test World",
         dimensions=(100, 100),
-        exits=[[(75, 60),(75,100)]],
-        walls=[[(40, 0), (40, 100)]]
+        exits=[[(100, 40), (100, 60)]],
+        walls=[[(50, 0), (50, 70)]]
     )
     env.add_external_walls()
         

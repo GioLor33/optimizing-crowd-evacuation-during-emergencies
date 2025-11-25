@@ -35,6 +35,8 @@ class CrowdSimulator:
                 self.agents_escaped.append(agent)
                 self.env.agents.pop(i)
                 print(f"Agent removed. Left: {len(self.env.agents)}")
+                
+        self.env.simulation_time += dt
         # else:
             #     survivors.append(agent)
             #     active_agents_data.append({

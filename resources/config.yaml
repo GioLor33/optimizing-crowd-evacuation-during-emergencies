@@ -25,7 +25,6 @@ world:
   num-agents: 100
   exits:
     - [[100, 40], [100, 60]]
-    - [[0, 40], [0, 60]]
   walls:
     - [[50, 0], [50, 70]]
   add_external_walls: true
@@ -39,7 +38,7 @@ visualization:
   right-border: 50
   left-border: 50
   top-border: 80
-  bottom-border: 100 
+  bottom-border: 120
    
   background-color: [0, 0, 0]
   agent-color: [0, 102, 255]

@@ -1,6 +1,7 @@
 from pyray import *
 from environments.environment import Environment
 from parser.config import Config
+import time
 
 # TODO: add buttons to start/pause/stop simulation
 
@@ -39,7 +40,8 @@ class Visualizer:
         # Add functions to show "moving" things on screen
         self.draw_environment()
         self.draw_agents()
-        #self.add_env_description()
+        self.add_env_description()
+        self.add_time_info()
         
         end_drawing()
         
@@ -120,14 +122,19 @@ class Visualizer:
         draw_text("Exit", lx_pos + 30, ly_pos + 70, 20, self.text_color)
         
     def add_env_description(self):
-        desc_x = 10
-        desc_y = self.top_border
+        desc_x = self.padding
+        desc_y = self.height - self.bottom_border + 20
         
-        draw_text("Environment Description:", desc_x, desc_y, 20, self.text_color)
-        draw_text(f"Dimensions: {self.environment.get_dimensions()}", desc_x, desc_y + 40, 20, self.text_color)
-        draw_text(f"Walls: {len(self.environment.get_walls())}", desc_x, desc_y + 70, 20, self.text_color)
-        draw_text(f"Exits: {len(self.environment.get_safety_exits())}", desc_x, desc_y + 100, 20, self.text_color)
+        draw_text("Environment Details:", desc_x, desc_y, 20, self.text_color)
+        draw_text(f"> Number of safety exits: {len(self.environment.get_safety_exits())}", desc_x, desc_y + 40, 20, self.text_color)
+        draw_text(f"> Agents still in danger: {len(self.environment.get_agents())} / {self.environment.initial_agent_count}", desc_x, desc_y + 70, 20, self.text_color)
         
+    def add_time_info(self):
+        info_x = self.width - self.right_border - 150
+        info_y = self.height - self.bottom_border + 20
+        
+        draw_text(f"Sim Time: {self.environment.simulation_time:.2f} s", info_x, info_y, 20, self.text_color)
+    
     def env_to_screen(self, env_position):
         starting_pos = (  # to center the environment in the window
             self.left_border + (self.width - self.right_border - self.left_border - self.environment.get_width() * self.scale_env) / 2,

@@ -31,6 +31,7 @@ async def main_program(visualizer, world, config):
     
     while True:  # Main executions
         start = time.time()
+        world.simulation_start_time = start
         sim.update(dt)
         end = time.time()
         

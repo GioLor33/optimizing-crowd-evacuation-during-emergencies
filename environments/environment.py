@@ -19,12 +19,16 @@ class Environment:
             self.set_walls(walls)
             
         self.agents = []
+        self.initial_agent_count = 0
+        self.simulation_time = 0.0
         
     def add_agent(self, agent):
         self.agents.append(agent)
+        self.initial_agent_count += 1
         
     def set_agents(self, agents):
         self.agents = agents
+        self.initial_agent_count = len(agents)
     
     def get_agents(self):
         return self.agents

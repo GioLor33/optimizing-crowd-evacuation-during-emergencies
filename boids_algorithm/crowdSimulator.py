@@ -1,9 +1,15 @@
 from boids_algorithm.boidsAgent import BoidsAgent
+from parser.config import Config
+from boids_algorithm.boidsConfig import BoidsConfig
 
 class CrowdSimulator:
-    def __init__(self, environment_input, num_agents=200):
+    def __init__(self, environment_input, config: Config):
+        self.config = BoidsConfig(config.file_path)
+        
         self.env = environment_input
-        self.env.set_agents([BoidsAgent(self.env, uid=i) for i in range(num_agents)])
+        
+        num_agents = self.config.num_agents
+        self.env.set_agents([BoidsAgent(self.env, uid=i, config=self.config) for i in range(num_agents)])
         self.agents_escaped = []
 
     def update(self, dt):

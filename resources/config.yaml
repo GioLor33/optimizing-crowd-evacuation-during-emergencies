@@ -1,5 +1,5 @@
 algorithm: 
-  name: boids
+  name: boids-without-panic
   time-step: 0.05
 
 algorithm-parameters:

@@ -10,11 +10,11 @@ class Environment:
         assert dimensions[0] > 0 and dimensions[1] > 0, "Dimensions must be positive integers"
         self.__dimensions = dimensions
         
-        self.__exits = set()
+        self.__exits = list()
         if exits != [None]:
             self.set_safety_exits(exits)
             
-        self.__walls = set()
+        self.__walls = list()
         if walls != [None]:
             self.set_walls(walls)
             
@@ -39,12 +39,15 @@ class Environment:
                 assert isinstance(wall, list) and len(wall) == 2, "Wall positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
                 for point in wall:
                     assert isinstance(point, tuple) and len(point) == 2, "Wall positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
-                self.__walls.add((tuple(wall[0]), tuple(wall[1])))
+                self.__walls.append((tuple(wall[0]), tuple(wall[1])))
         else:
             raise ValueError("Positions must be provided as a tuple or as a list of tuples")  
            
     def get_walls(self):
         return self.__walls
+    
+    def get_wall(self, i:int):
+        return self.__walls[i]
     
     def add_external_walls(self):
         width, height = self.__dimensions
@@ -60,7 +63,7 @@ class Environment:
                 assert isinstance(exit, list) and len(exit) == 2, "Safety exit positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
                 for point in exit:
                     assert isinstance(point, tuple) and len(point) == 2, "Safety exit positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
-                self.__exits.add((tuple(exit[0]), tuple(exit[1])))
+                self.__exits.append((tuple(exit[0]), tuple(exit[1])))
         else:
             raise ValueError("Safety exit positions must be provided as a tuple or as a list of tuples")  
              
@@ -103,10 +106,10 @@ class Environment:
         if pos[0] < 0 or pos[0] > self.__dimensions[0] or pos[1] < 0 or pos[1] > self.__dimensions[1]:
             return None
         
-        for item in to_check:
+        for i, item in enumerate(to_check):
             if segments_intersect(prev_pos, pos,
                                   item[0], item[1]):
-                return item
+                return i
         return None
     
     def check_is_position_free(self, position):

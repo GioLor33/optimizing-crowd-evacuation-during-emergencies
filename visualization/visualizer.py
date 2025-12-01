@@ -26,6 +26,10 @@ class Visualizer:
         self.text_color = config.text_color
         self.title_color = config.title_color
         
+        self.hasGraph = False
+        self.nodes = None
+        self.edges = None
+        
         assert isinstance(environment, Environment)
         self.define_environment(environment)
         
@@ -39,9 +43,14 @@ class Visualizer:
         
         # Add functions to show "moving" things on screen
         self.draw_environment()
+        
+        if self.hasGraph:
+            self.draw_graph()
+            
         self.draw_agents()
         self.add_env_description()
         self.add_time_info()
+        
         
         end_drawing()
         
@@ -150,3 +159,49 @@ class Visualizer:
     def close(self):
         close_window()
         self.on = False
+        
+    def associate_graph(self, nodes, edges):
+        self.hasGraph = True
+        self.nodes = nodes
+        self.edges = edges
+        
+    def remove_graph(self):
+        self.hasGraph = False
+        self.nodes = None
+        self.edges = None
+        
+    def disable_graph(self):
+        self.hasGraph = False
+        
+    def enable_graph(self):
+        if self.nodes is not None and self.edges is not None:
+            self.hasGraph = True
+        else:
+            print("No graph associated to visualizer. Cannot enable graph visualization. Call enable_graph() function.")
+        
+    def draw_graph(self):
+        if self.nodes is None:
+            print("No graph nodes to draw.")
+            return
+        
+        # Draw edges
+        for i, neighbors in self.edges.items():
+            p1 = self.nodes[i]
+            for (j, _) in neighbors:
+                p2 = self.nodes[j]
+                draw_line(
+                    self.env_to_screen(p1)[0],
+                    self.env_to_screen(p1)[1],
+                    self.env_to_screen(p2)[0],
+                    self.env_to_screen(p2)[1],
+                    [255, 105, 180, 50]
+                )
+        
+        # Draw nodes
+        for node in self.nodes:
+            draw_circle(
+                int(self.env_to_screen(node)[0]),
+                int(self.env_to_screen(node)[1]),
+                max(2, int(15 * self.scale_env / 10)),
+                [255, 105, 180, 50]
+            )

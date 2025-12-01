@@ -22,9 +22,14 @@ async def main_program(visualizer, world, config):
     
     if config.algorithm == "boids-without-panic":
         from boids_algorithm.crowdSimulator import CrowdSimulator
-        
-        print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
         sim = CrowdSimulator(world, config = config)
+        print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
+    if config.algorithm == "aco":
+        from aco_algorithm.crowdSimulator import CrowdSimulator
+        sim = CrowdSimulator(world, config = config)
+        visualizer.associate_graph(sim.aco_env.nodes, sim.aco_env.edges)
+        visualizer.enable_graph()
+        print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")
     else:
         raise ValueError("Algorithm " + str(config.algorithm) + " not recognized.")
         exit(1)

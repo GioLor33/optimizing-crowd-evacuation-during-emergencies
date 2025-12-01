@@ -21,15 +21,15 @@ def segments_intersect(A, B, C, D):
 
     return False
 
-def wall_intersection_point(pos, ahead_pos, wall_start, wall_end):
-    x0 = pos[0]
-    y0 = pos[1]
-    x1 = ahead_pos[0]
-    y1 = ahead_pos[1]
-    x2 = wall_start[0]
-    y2 = wall_start[1]
-    x3 = wall_end[0]
-    y3 = wall_end[1]
+def intersection_point(pos_1_start, pos_1_end, pos_2_start, pos_2_end):
+    x0 = pos_1_start[0]
+    y0 = pos_1_start[1]
+    x1 = pos_1_end[0]
+    y1 = pos_1_end[1]
+    x2 = pos_2_start[0]
+    y2 = pos_2_start[1]
+    x3 = pos_2_end[0]
+    y3 = pos_2_end[1]
     
     # det := np.ling.det()
 
@@ -41,6 +41,12 @@ def wall_intersection_point(pos, ahead_pos, wall_start, wall_end):
             [x0-x1, x2-x3],
             [y0-y1, y2-y3]
         ])
+    
+    # Lines are parallel or coincident
+    # TODO: should we handle coincident lines differently?
+    if np.linalg.det(l2) == 0:
+        return None  
+    
     t = np.linalg.det(l1) / np.linalg.det(l2)
     intersection_x = x0 + t * (x1 - x0)
     intersection_y = y0 + t * (y1 - y0)

@@ -28,7 +28,7 @@ class Config:
         if self.visualization:
             self.window_name = visualization.get('window-name', 'Crowd Simulation')
             self.visualization_dimensions = tuple(
-                int(dim) for dim in visualization.get('window-dimensions', [800, 450])
+                int(dim) for dim in visualization.get('dimensions')
             )            
             
             self.padding = int(visualization.get('padding'))

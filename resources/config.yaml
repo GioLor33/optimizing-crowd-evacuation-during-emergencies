@@ -1,5 +1,5 @@
 algorithm: 
-  name: boids-without-panic
+  name: pso-local #boids-without-panic
   time-step: 0.05
 
 algorithm-parameters:
@@ -18,6 +18,12 @@ algorithm-parameters:
       vision-radius: 7.0
       min-separation: 15.0  # 3 * agent_size # what is this?
       wall-avoid-distance: 10.0
+
+  pso-local:  # PSO parameters
+    neighborhood_radius: 10.0
+    inertia_weight: 0.5
+    cognitive_weight: 1.5
+    social_weight: 1.5
 
 world:
   name: test_environment

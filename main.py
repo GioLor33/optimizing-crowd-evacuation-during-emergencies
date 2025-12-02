@@ -6,6 +6,7 @@ import time
 from visualization.visualizer import Visualizer
 from environments.environment import Environment
 from parser.config import Config
+from pso_algorithm.psoAgent import LocalPSOBoidsAgent
 
 async def visualization_loop(visualizer):
     assert isinstance(visualizer, Visualizer)
@@ -24,6 +25,9 @@ async def main_program(visualizer, world, config):
         from boids_algorithm.crowdSimulator import CrowdSimulator
         
         print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
+        sim = CrowdSimulator(world, config = config)
+    elif config.algorithm == "pso-local":
+        from pso_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
     else:
         raise ValueError("Algorithm " + str(config.algorithm) + " not recognized.")

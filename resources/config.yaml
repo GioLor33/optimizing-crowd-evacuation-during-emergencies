@@ -21,13 +21,13 @@ algorithm-parameters:
 
 world:
   name: test_environment
-  dimensions: [100, 100]
+  dimensions: [100,100]
+  #[100, 100]
   num-agents: 100
   exits:
     - [[100, 40], [100, 60]]
   walls:
     - [[50, 0], [50, 70]]
-  add_external_walls: true
 
 visualization:
   activate: true
@@ -35,9 +35,9 @@ visualization:
   window-name: "Crowd Simulation"
 
   padding: 10
-  right-border: 50
-  left-border: 50
-  top-border: 80
+  right-border: 300
+  left-border: 300
+  top-border: 0
   bottom-border: 120
    
   background-color: [0, 0, 0]

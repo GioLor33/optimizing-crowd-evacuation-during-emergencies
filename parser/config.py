@@ -16,11 +16,13 @@ class Config:
             [tuple(float(coord) for coord in exit[0]), tuple(float(coord) for coord in exit[1])]
             for exit in world.get('exits', [])
         ]
-        self.walls = [
-            [tuple(float(coord) for coord in wall[0]), tuple(float(coord) for coord in wall[1])]
-            for wall in world.get('walls', [])
-        ] 
-        self.add_external_walls = world.get('add_external_walls')
+        if world.get('walls') is None:
+            self.walls = []
+        else:
+            self.walls = [
+                [tuple(float(coord) for coord in wall[0]), tuple(float(coord) for coord in wall[1])]
+                for wall in world.get('walls', [])
+            ] 
         self.num_agents = int(world.get('num-agents'))
         
         visualization = self.config.get('visualization', {})

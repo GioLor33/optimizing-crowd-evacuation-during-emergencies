@@ -17,6 +17,7 @@ class Environment:
         self.__walls = list()
         if walls != [None]:
             self.set_walls(walls)
+        self.add_external_walls()
             
         self.agents = []
         self.initial_agent_count = 0
@@ -69,6 +70,9 @@ class Environment:
              
     def get_safety_exits(self):
         return self.__exits
+    
+    def get_safety_exits_number(self):
+        return len(self.__exits)
 
     def remove_safety_exit(self, position):
         if position in self.__exits:

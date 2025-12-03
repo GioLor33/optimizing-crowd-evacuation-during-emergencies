@@ -52,4 +52,34 @@ def intersection_point(pos_1_start, pos_1_end, pos_2_start, pos_2_end):
     intersection_y = y0 + t * (y1 - y0)
     
     return np.array([intersection_x, intersection_y])
+
+def path_intersection_in_time(p1, v1, p2, v2, dt):
+    dp = p1 - p2
+    dv = v1 - v2
+    
+    # If relative velocity is zero: no motion toward each other
+    if np.allclose(dv, 0):
+        return None  
+
+    # Compute t for each component
+    t_values = []
+    for i in range(2):
+        if abs(dv[i]) < 1e-8:
+            # No solution if dp[i] != 0
+            if abs(dp[i]) > 1e-8:
+                return None  
+            # This dimension gives no constraint (parallel)
+        else:
+            t_values.append(dp[i] / dv[i])
+
+    # All non-parallel dimensions must agree on t
+    if len(t_values) == 0:
+        return None
+    t = t_values[0]
+    for ti in t_values[1:]:
+        if abs(t - ti) > 1e-6:
+            return None  # no consistent solution
+
+    return t if t >= 0 and t <= dt else None
+    
     

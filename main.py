@@ -4,6 +4,7 @@ import asyncio
 import time
 
 from visualization.visualizer import Visualizer
+#from visualization.visualizerV2 import Visualizer
 from environments.environment import Environment
 from parser.config import Config
 
@@ -37,11 +38,14 @@ async def main_program(visualizer, world, config):
     while True:  # Main executions
         start = time.time()
         world.simulation_start_time = start
+        #time.sleep(10)
         sim.update(dt)
         end = time.time()
         
         if (end - start) < dt:
             time.sleep(dt - (end - start))
+            
+        #time.sleep(0.2)
             
         if len(sim.agents_escaped) == num_agents:
             break
@@ -53,7 +57,7 @@ async def main_program(visualizer, world, config):
         
 async def initialize_main():
     
-    config = Config("resources/config.yaml")
+    config = Config("resources/config_aco.yaml")
     
     env = Environment(
         name=config.world_name,
@@ -61,8 +65,6 @@ async def initialize_main():
         exits=config.exits,
         walls=config.walls
     )
-    if config.add_external_walls:
-        env.add_external_walls()
     
     if config.visualization:
         visualizer = Visualizer(environment=env, config=config)

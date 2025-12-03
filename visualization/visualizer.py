@@ -64,16 +64,7 @@ class Visualizer:
                             )
         print("Environment scale in visualizer set to: " + str(self.scale_env))
         
-    def draw_environment(self):
-        # Draw external outline of the environment
-        draw_rectangle_lines(
-            self.env_to_screen((0, 0))[0], 
-            self.env_to_screen((0, 0))[1], 
-            self.env_to_screen((self.environment.get_dimensions()[0], self.environment.get_dimensions()[1]))[0] - self.env_to_screen((0, 0))[0], 
-            self.env_to_screen((self.environment.get_dimensions()[0], self.environment.get_dimensions()[1]))[1] - self.env_to_screen((0, 0))[1], 
-            RED
-        )
-        
+    def draw_environment(self):        
         if self.environment is not None:
             for wall in self.environment.get_walls():
                 self.draw_walls(wall)
@@ -82,21 +73,25 @@ class Visualizer:
     
     def draw_walls(self, wall):
         w_starting_pos, w_ending_pos = wall
+        w_starting_pos_screen = self.env_to_screen(w_starting_pos)
+        w_ending_pos_screen = self.env_to_screen(w_ending_pos)
         draw_line(
-            self.env_to_screen(w_starting_pos)[0], 
-            self.env_to_screen(w_starting_pos)[1], 
-            self.env_to_screen(w_ending_pos)[0], 
-            self.env_to_screen(w_ending_pos)[1], 
+            w_starting_pos_screen[0], 
+            w_starting_pos_screen[1], 
+            w_ending_pos_screen[0], 
+            w_ending_pos_screen[1], 
             self.walls_color
         )
         
     def draw_exits(self, exit):
         e_starting_pos, e_ending_pos = exit
+        e_starting_pos_screen = self.env_to_screen(e_starting_pos)
+        e_ending_pos_screen = self.env_to_screen(e_ending_pos)
         draw_line(
-            self.env_to_screen(e_starting_pos)[0], 
-            self.env_to_screen(e_starting_pos)[1], 
-            self.env_to_screen(e_ending_pos)[0], 
-            self.env_to_screen(e_ending_pos)[1], 
+            e_starting_pos_screen[0], 
+            e_starting_pos_screen[1], 
+            e_ending_pos_screen[0], 
+            e_ending_pos_screen[1], 
             self.exits_color
         )
         
@@ -107,22 +102,37 @@ class Visualizer:
         
         for agent in agents:
             a_pos = agent.get_position()
+            a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
+            if agent.path is not None:
+                color = self.agents_color
+            else:
+                color = RED
             draw_circle(
-                int(self.env_to_screen((a_pos[0], a_pos[1]))[0]), 
-                int(self.env_to_screen((a_pos[0], a_pos[1]))[1]), 
-                max(2, int(3 * self.scale_env / 10)),  # radius scaled to environment size
-                self.agents_color
+                int(a_pos_screen[0]), 
+                int(a_pos_screen[1]), 
+                2,  # radius scaled to environment size
+                color
+            )
+            
+            velocity_screen = agent.vel * 2.5
+            draw_line(
+                int(a_pos_screen[0]), 
+                int(a_pos_screen[1]),
+                int(a_pos_screen[0] + velocity_screen[0]),
+                int(a_pos_screen[1] + velocity_screen[1]),
+                color
             )
         
     def add_title(self):
         # the title is centered at the top of the window
-        font_size = 30
-        draw_text("CROWD SIMULATION IN EVACUATION", self.width // 2 - 300, self.padding, font_size, RED)
-        self.top_border = self.padding + font_size + 30
+        font_size = 27
+        draw_text("CROWD SIMULATION", self.padding, self.padding, font_size, WHITE)
+        draw_text("during", self.padding, self.padding + font_size + 5, font_size, WHITE)
+        draw_text("EVACUATION", self.padding, self.padding + 2 * (font_size + 5), font_size, RED)
         
     def add_legend(self): 
-        lx_pos = self.padding
-        ly_pos = self.env_to_screen((0,0))[1]
+        lx_pos = self.width - 100
+        ly_pos = self.top_border + self.padding
                
         draw_text("Legend:", lx_pos, ly_pos, 20, self.text_color)
         draw_line(lx_pos, ly_pos + 50, lx_pos + 20, ly_pos + 50, self.walls_color)
@@ -187,21 +197,24 @@ class Visualizer:
         # Draw edges
         for i, neighbors in self.edges.items():
             p1 = self.nodes[i]
+            p1_screen = self.env_to_screen(p1)
             for (j, _) in neighbors:
                 p2 = self.nodes[j]
+                p2_screen = self.env_to_screen(p2)
                 draw_line(
-                    self.env_to_screen(p1)[0],
-                    self.env_to_screen(p1)[1],
-                    self.env_to_screen(p2)[0],
-                    self.env_to_screen(p2)[1],
+                    p1_screen[0],
+                    p1_screen[1],
+                    p2_screen[0],
+                    p2_screen[1],
                     [255, 105, 180, 50]
                 )
         
         # Draw nodes
         for node in self.nodes:
+            node_screen = self.env_to_screen(node)
             draw_circle(
-                int(self.env_to_screen(node)[0]),
-                int(self.env_to_screen(node)[1]),
-                max(2, int(15 * self.scale_env / 10)),
+                int(node_screen[0]),
+                int(node_screen[1]),
+                2,
                 [255, 105, 180, 50]
             )

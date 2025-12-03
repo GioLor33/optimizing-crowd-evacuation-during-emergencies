@@ -27,7 +27,6 @@ async def initialize_main():
         walls=[[(1, 1), (1, 2)]],
         exits=[[(0, 0), (10, 0)]]
     )
-    env.add_external_walls()
         
     visualizer = Visualizer(environment=env, name="Crowd Simulation")
     await asyncio.gather(

@@ -1,0 +1,34 @@
+algorithm: 
+  name: aco
+  time-step: 0.005
+
+algorithm-parameters:
+
+world:
+  name: test_environment
+  dimensions: [10,10]
+  #[100, 100]
+  num-agents: 50
+  exits:
+    - [[10, 4], [10, 6]]
+  walls:
+    
+    #- [[5, 0], [5, 7]]
+visualization:
+  activate: true
+  dimensions: [1200, 800]
+  window-name: "Crowd Simulation"
+
+  padding: 10
+  right-border: 300
+  left-border: 300
+  top-border: 0
+  bottom-border: 120
+   
+  background-color: [0, 0, 0]
+  agent-color: [243, 255, 20]
+  wall-color: [200, 200, 200]
+  exit-color: [57, 255, 20]
+  title-color: [255, 0, 0]
+  text-color: [255, 255, 255]
+

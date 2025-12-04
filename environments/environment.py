@@ -1,5 +1,4 @@
 from environments.utils import segments_intersect
-import random
 import numpy as np
 
 class Environment:
@@ -130,15 +129,18 @@ class Environment:
     ###########################################
     
     def get_random_spawn(self):
-        gx = random.uniform(1, self.__dimensions[0] - 2)
-        gy = random.uniform(1, self.__dimensions[1] - 2)
+        gx = np.random.uniform(1, self.__dimensions[0] - 2)
+        gy = np.random.uniform(1, self.__dimensions[1] - 2)
         if self.check_is_position_free((gx, gy)):
             return (gx, gy)
 
     def get_random_exit(self):
         if not self.__exits:
             raise ValueError("No exits defined in the environment")
-        A, B = random.choice(list(self.__exits))
+
+        exits = list(self.__exits)
+        idx = np.random.choice(len(exits))
+        A, B = exits[idx]
         point = (
             (A[0] + B[0]) / 2,
             (A[1] + B[1]) / 2

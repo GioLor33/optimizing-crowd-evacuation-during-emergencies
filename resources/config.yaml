@@ -1,6 +1,7 @@
 algorithm: 
   name: aco
   time-step: 0.05
+  seed: 2
 
 algorithm-parameters:
 

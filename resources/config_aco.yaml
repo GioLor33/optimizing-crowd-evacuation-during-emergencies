@@ -1,6 +1,7 @@
 algorithm: 
   name: aco
   time-step: 0.005
+  seed: 2
 
 algorithm-parameters:
 
@@ -8,7 +9,7 @@ world:
   name: test_environment
   dimensions: [10,10]
   #[100, 100]
-  num-agents: 50
+  num-agents: 100
   exits:
     - [[10, 4], [10, 6]]
   walls:

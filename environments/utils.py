@@ -1,5 +1,4 @@
 import numpy as np
-import random
 
 def segments_intersect(A, B, C, D):
     def orient(p, q, r):

@@ -12,8 +12,9 @@ class CrowdSimulator():
         self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
         self.agents_escaped = []
         
-        N = max(self.config.world_dimensions[0] * self.config.world_dimensions[1] // 10, 10)
+        N = max(self.config.world_dimensions[0] * self.config.world_dimensions[1] // 2, 10)
         k = max(min(N,5), N // 10)
+        print(f"Creating PRM graph with N={N} nodes and k={k} neighbors.")
         self.aco_env = PRMGraph(self.env, N=N, k=k)
         self.paths_for_agents = self.aco_env.run_aco()
 

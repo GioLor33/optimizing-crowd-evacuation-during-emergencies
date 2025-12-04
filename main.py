@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import asyncio
 import time
 
@@ -20,6 +19,10 @@ async def main_program(visualizer, world, config):
     
     num_agents = config.num_agents 
     dt = config.dt
+    seed = config.random_seed
+    if seed is not None:
+        np.random.seed(seed)
+        print(f"Random seed set to {seed}.")
     
     if config.algorithm == "boids-without-panic":
         from boids_algorithm.crowdSimulator import CrowdSimulator

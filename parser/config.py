@@ -8,6 +8,10 @@ class Config:
             
         self.algorithm = self.config.get('algorithm', {}).get('name')
         self.dt = self.config.get('algorithm', {}).get('time-step')
+        self.random_seed = self.config.get('algorithm', {}).get('seed', None)
+        if self.random_seed is not None:
+            self.random_seed = int(self.random_seed)
+        print(f"RANDOM SEED SET TO {self.random_seed}")
         
         world = self.config.get('world', {})
         self.world_name = world.get('name')

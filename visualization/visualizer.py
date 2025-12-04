@@ -45,6 +45,7 @@ class Visualizer:
         self.draw_environment()
         
         if self.hasGraph:
+            self.draw_grid()
             self.draw_graph()
             
         self.draw_agents()
@@ -188,6 +189,32 @@ class Visualizer:
             self.hasGraph = True
         else:
             print("No graph associated to visualizer. Cannot enable graph visualization. Call enable_graph() function.")
+        
+        
+    def draw_grid(self):
+        dim = self.environment.get_dimensions()
+        # vertical lines
+        for x in range(int(dim[0]) + 1):
+            start_pos = self.env_to_screen((x, 0))
+            end_pos = self.env_to_screen((x, dim[1]))
+            draw_line(
+                start_pos[0],
+                start_pos[1],
+                end_pos[0],
+                end_pos[1],
+                [200, 200, 200, 20]
+            )
+        # horizontal lines
+        for y in range(int(dim[1]) + 1):
+            start_pos = self.env_to_screen((0, y))
+            end_pos = self.env_to_screen((dim[0], y))
+            draw_line(
+                start_pos[0],
+                start_pos[1],
+                end_pos[0],
+                end_pos[1],
+                [200, 200, 200, 20]
+            )
         
     def draw_graph(self):
         if self.nodes is None:

@@ -6,6 +6,12 @@ from scipy.spatial import KDTree
 # e alla fine di queste 100 iterazioni viene scelto il percorso migliore per ogni agente (quindi non si basa sui singoli nodi, 
 # ma sugli agenti)
 
+class Node():
+    def __init__(self, id, pos):
+        self.id = id
+        self.pos = pos
+        self.edges = {}  # dictionary with [key, value] as [neighbor_node.id, cost]
+
 class PRMGraph():
     def __init__(self, env_instance: Environment, N: int, k:int):
         '''
@@ -22,63 +28,99 @@ class PRMGraph():
         '''
         
         self.env = env_instance
-        self.exit_nodes = set()
         
         self.nodes = []
-        self.edges = {} # graph stored as an adjacency list
+        self.exit_nodes = set()
         print("Creating PRM graph...")
         self.create_graph(env_instance, N, k)
         print("PRM graph created with " + str(len(self.nodes)) + " nodes.")
     
     def create_graph(self, env_instance: Environment, N: int, k: int):
         
-        set_nodes = set()
-        for _ in range(N):
+        check_node_positions = set()
+        self.nodes = []
+
+        # Add random nodes
+        for id in range(N):
             free = False
             while not free:
-                x = np.random.uniform(0, env_instance.get_width())
-                y = np.random.uniform(0, env_instance.get_height())
-                free = env_instance.check_is_position_free((x,y)) and ((x, y) not in set_nodes)
-            self.nodes.append((x, y))
-            set_nodes.add((x, y))
-        
-        # # TO CHANGE
-        # self.nodes.append((self.env.get_width() / 3, self.env.get_height() / 2))     # start from center
-        # self.nodes.append((self.env.get_width() / 2, self.env.get_height() / 2))     # go straight
-        # # self.nodes.append((self.env.get_width() / 2, self.env.get_height() / 3))
-        # self.nodes.append((2 * self.env.get_width() / 3, self.env.get_height() / 3)) # deviation to test algorithm
-        # k = 3
-        # # END TO CHANGE
-            
+                pos = (np.random.uniform(0, env_instance.get_width()), np.random.uniform(0, env_instance.get_height()))
+                free = env_instance.check_is_position_free(pos) and (pos not in check_node_positions)
+            new_node = Node(id, pos)
+            self.nodes.append(new_node)
+            check_node_positions.add(pos)
+
+        # Add exit nodes
         exits = env_instance.get_safety_exits()
-        for exit_points in exits:
+        for id, exit_points in enumerate(exits):
             exit_points = np.array(exit_points)
-            mid = ((exit_points[0] + exit_points[1]) * 1.0 / 2)
-            self.nodes.append(mid)
-            self.exit_nodes.add(len(self.nodes) - 1)
-            
-        self.edges = {i: [] for i in range(len(self.nodes))}
-        
-        tree = KDTree(np.array(self.nodes))
-        for i, p in enumerate(self.nodes):
-            dists, idxs = tree.query(p, k=k+1)
+            mid = (exit_points[0] + exit_points[1]) / 2
+            new_node = Node(N + id, mid)
+            self.nodes.append(new_node)
+            self.exit_nodes.add(N + id)
+
+        # Build KDTree
+        nodes_list = self.nodes
+        tree = KDTree(np.array([node.pos for node in nodes_list]))
+
+        # Connect nodes
+        for i, p1 in enumerate(nodes_list):
+            point_coords = p1.pos
+            dists, idxs = tree.query(point_coords, k=k+1)
             for dist, j in zip(dists[1:], idxs[1:]):  # skip itself
-                p1 = self.nodes[i]
-                p2 = self.nodes[j]
-                if env_instance.check_something_reached(p1, p2, "wall") is None:
-                    exit = env_instance.check_something_reached(p1, p2, "exit")
-                    if exit is None:
-                        self.edges[i].append((j, dist))  # store neighbor and edge cost
-                    else:
-                        exit_node_index = len(self.nodes) - len(env_instance.get_safety_exits()) + exit
-                        # mid = ((exit[0] + exit[1]) / 2)
-                        self.edges[i].append((exit_node_index, dist))
-        print(self.edges)
+                p2 = nodes_list[j]
+
+                if env_instance.check_something_reached((p1.pos[0], p1.pos[1]), (p2.pos[0], p2.pos[1]), "wall") is None:
+                    exit_idx = env_instance.check_something_reached((p1.pos[0], p1.pos[1]), (p2.pos[0], p2.pos[1]), "exit")
+                    if exit_idx is not None:
+                        p2 = nodes_list[len(nodes_list) - len(exits) + exit_idx]
+
+                    cost = np.linalg.norm([p1.pos[0] - p2.pos[0], p1.pos[1] - p2.pos[1]])
+                    if p2 not in p1.edges:
+                        p1.edges[p2.id] = cost
+                    if p1 not in p2.edges:
+                        p2.edges[p1.id] = cost
+
+        
+        # check_node_positions = set()
+        # for id in range(N):
+        #     free = False
+        #     while not free:
+        #         x = np.random.uniform(0, env_instance.get_width())
+        #         y = np.random.uniform(0, env_instance.get_height())
+        #         free = env_instance.check_is_position_free((x,y)) and ((x, y) not in check_node_positions)
+        #     new_node = Node(id, x, y)
+        #     self.nodes.add(new_node)
+        #     check_node_positions.add((x, y))
+            
+        # exits = env_instance.get_safety_exits()
+        # for id, exit_points in enumerate(exits):
+        #     exit_points = np.array(exit_points)
+        #     mid = ((exit_points[0] + exit_points[1]) * 1.0 / 2)
+        #     self.nodes.add(Node(N + id, mid[0], mid[1]))
+        #     self.exit_nodes.add(N + id)
+        
+        # nodes_list = list(self.nodes)
+        # tree = KDTree(np.array([(node.x, node.y) for node in nodes_list]))
+        # for i, p in enumerate(nodes_list):
+        #     p = (p.x, p.y)
+        #     dists, idxs = tree.query(p, k=k+1)
+        #     for dist, j in zip(dists[1:], idxs[1:]):  # skip itself
+        #         p1 = nodes_list[i]
+        #         p2 = nodes_list[j]
+        #         if env_instance.check_something_reached((p1.x, p1.y), (p2.x, p2.y), "wall") is None:
+        #             exit = env_instance.check_something_reached((p1.x, p1.y), (p2.x, p2.y), "exit")
+        #             if exit is not None:
+        #                 p2 = nodes_list[len(self.nodes) - len(env_instance.get_safety_exits()) + exit]
+        #             if p2.id not in p1.edges_check:
+        #                 p1.edges_check.add(p2.id)
+        #             if p1.id not in p2.edges_check:
+        #                 p2.edges_check.add(p1.id)
+        
                         
     def run_aco(self, n_iterations=100, alpha=2.0, beta=1.0, evaporation_rate=0.7, Q=100):
-        n_safety_exits = self.env.get_safety_exits_number()
-        n_points = len(self.nodes)
-        pheromone = np.ones((n_points, n_points))
+        n_nodes = len(self.nodes)
+        pheromone = np.ones((n_nodes, n_nodes))
         
         # print(f"Nodes checked as safety exits: {self.exit_nodes}")
         
@@ -96,34 +138,34 @@ class PRMGraph():
                 # Maybe this implementation will not be precise if the agent is very close to the border of the grid cell, but still
                 
                 #This if beause otherwise at each iteration the starting point would be recomputed, but the result would be the same always
-                if agent.start_node is not None:
-                    start_node = agent.start_node
+                if agent.start_node_id is not None:
+                    start_node_id = agent.start_node_id
                 else:
-                    start_node = min(range(n_points), key=lambda i: np.linalg.norm(np.array(self.nodes[i]) - np.array(start_pos)))
-                    agent.start_node = start_node
+                    start_node_id = min(range(n_nodes), key=lambda i: np.linalg.norm(np.array(self.nodes[i].pos) - np.array(start_pos)))
+                    agent.start_node_id = start_node_id
                 
-                path = [start_node]
-                visited = set(path)
+                path = [start_node_id]
+                visited_id = set(path)
                 
                 # print("Starting while loop")
                 while True:
-                    current_node = path[-1]
+                    current_node_id = path[-1]
                     # print("-----------------------------")
                     # print(f"> Current path: {path}")
-                    # print(f"> Visited nodes: {visited}")
-                    # print(f"> Current node: {current_node}")
-                    if current_node in self.exit_nodes: # reached an exit node
+                    # print(f"> Visited_id nodes: {visited_id}")
+                    print(f"> Current node: {current_node_id}")
+                    if current_node_id in self.exit_nodes: # reached an exit node
                         # here we should check if the exit corresponds to the agent's target
                         # otherwise we should penalize the visit of this node !! (we do not want the agent to go out from the wrong exit)
-                        # print(f"> Agent {agent.id} reached exit node {current_node} during simulation {iteration}.")
+                        # print(f"> Agent {agent.id} reached exit node {current_node_id} during simulation {iteration}.")
                         break
                     
-                    neighbors = self.edges[current_node]
-                    # print(f"> Neighbors of current node: {[n for n, _ in neighbors]}")
+                    neighbors = self.nodes[current_node_id].edges.items()
+                    # print(f"> Neighbors of current node: {[n for n in neighbors]}")
                     probabilities = []
-                    for neighbor, cost in neighbors:
-                        if neighbor not in visited:
-                            tau = pheromone[current_node][neighbor] ** alpha
+                    for neighbor_id, cost in neighbors:
+                        if neighbor_id not in visited_id:
+                            tau = pheromone[current_node_id][neighbor_id] ** alpha
                             eta = 1 #(1.0 / cost) ** beta
                             probabilities.append(tau * eta)
                         else:
@@ -132,7 +174,7 @@ class PRMGraph():
                     # print(f"> Probabilities: {probabilities}")
                     
                     total = sum(probabilities)
-                    if total == 0: # no unvisited neighbors
+                    if total == 0: # no unvisited_id neighbors
                         break
                     
                     probabilities = [p / total for p in probabilities]
@@ -141,9 +183,9 @@ class PRMGraph():
                     # print(f"> Next node chosen: {next_node}")
                     
                     path.append(next_node)
-                    visited.add(next_node)
+                    visited_id.add(next_node)
                 # print("Exited while loop")
-                path_length = sum(np.linalg.norm(np.array(self.nodes[path[i]]) - np.array(self.nodes[path[i+1]])) for i in range(len(path)-1))
+                path_length = sum(np.linalg.norm(np.array(self.nodes[path[i]].pos) - np.array(self.nodes[path[i+1]].pos)) for i in range(len(path)-1))
                 # print(f"> Path found for agent {agent.id} during simulation {iteration}: {path} with length {path_length}")
                 all_paths.append(path)
                 all_path_lengths.append(path_length)
@@ -165,4 +207,4 @@ class PRMGraph():
             # print("#########################################\n")
     
     def nodes_of(self, path_indices):
-        return [np.array(self.nodes[i]) for i in path_indices]
+        return [np.array(self.nodes[i].pos) for i in path_indices]

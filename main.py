@@ -31,7 +31,7 @@ async def main_program(visualizer, world, config):
     if config.algorithm == "aco":
         from aco_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
-        visualizer.associate_graph(sim.aco_env.nodes, sim.aco_env.edges)
+        visualizer.associate_graph(sim.aco_env.nodes)
         visualizer.enable_graph()
         print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")
     else:
@@ -41,7 +41,6 @@ async def main_program(visualizer, world, config):
     while True:  # Main executions
         start = time.time()
         world.simulation_start_time = start
-        #time.sleep(10)
         sim.update(dt)
         end = time.time()
         

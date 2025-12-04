@@ -15,7 +15,7 @@ class AcoAgent(Agent):
         self.path = None
         self.path_length = 0
         
-        self.start_node = None
+        self.start_node_id = None
         
         self.safe = False
         

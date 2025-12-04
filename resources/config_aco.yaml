@@ -12,7 +12,6 @@ world:
   exits:
     - [[10, 4], [10, 6]]
   walls:
-    
     #- [[5, 0], [5, 7]]
 visualization:
   activate: true

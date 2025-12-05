@@ -1,4 +1,4 @@
-from pso_algorithm.psoAgent import LocalPSOBoidsAgent
+from pso_algorithm.psoAgent import LocalPSOAgent
 from pso_algorithm.psoConfig import PSOConfig
 from pso_algorithm.psoAgent import GridFitness
 from parser.config import Config
@@ -13,9 +13,9 @@ class CrowdSimulator:
 
         fitness_map = GridFitness(self.env)
 
-        # Create PSO Boids agents
+        # Create PSO agents
         self.env.set_agents([
-            LocalPSOBoidsAgent(
+            LocalPSOAgent(
                 env_instance=self.env,
                 uid=i,
                 config=self.config,
@@ -30,9 +30,9 @@ class CrowdSimulator:
 
         for i in range(N - 1, -1, -1):
             agent = self.env.agents[i]
-            agent.update(snapshot, dt)
+            agent.update(snapshot, self.env, dt)
 
-            hit_exit = self.env.check_something_reached(agent.prev_pos, agent.pos, "exit")
+            hit_exit = self.env.has_reached_exit(agent)
             x, y = agent.pos
             w, h = self.env.get_dimensions()
             is_out_of_bounds = (x >= w) or (x <= 0) or (y >= h) or (y <= 0)

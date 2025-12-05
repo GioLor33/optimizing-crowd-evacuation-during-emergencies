@@ -1,10 +1,11 @@
 import numpy as np
-from boids_algorithm.boidsAgent import BoidsAgent
+#from boids_algorithm.boidsAgent import BoidsAgent
+from environments.agent import Agent
 from collections import deque
 
-class LocalPSOBoidsAgent(BoidsAgent):
+class LocalPSOAgent(Agent):
     def __init__(self, env_instance, uid, config, fitness_map):
-        super().__init__(env_instance, uid, config)
+        super().__init__(env_instance, uid)
         self.pbest_position = self.pos.copy()
         self.pbest_time = float('inf')  
         self.neighborhood_radius = config.NEIGHBORHOOD_RADIUS
@@ -12,19 +13,21 @@ class LocalPSOBoidsAgent(BoidsAgent):
         self.c1 = config.C1
         self.c2 = config.C2
         self.fitness_map = fitness_map
+        self.prev_pos = None
 
-    def update(self, agents_snapshot, dt):
-        # Boids behavior
-        super().update(agents_snapshot, dt)
+    def update(self, agents_snapshot, env, dt):
+        super().update(agents_snapshot, env, dt)
+        acc = np.zeros(2)
+        self.prev_pos = self.pos.copy()
 
         # PSO 
         lbest_position = self._compute_lbest(agents_snapshot)
         r1, r2 = np.random.rand(), np.random.rand()
 
         pso_velocity = self.w * self.vel + self.c1 * r1 * (self.pbest_position - self.pos) + self.c2 * r2 * (lbest_position - self.pos)
-        self.acc += pso_velocity
+        acc += pso_velocity
 
-        self.vel += self.acc * dt
+        self.vel += acc * dt
         self.vel = self._limit_vector(self.vel, self.max_speed)
         self.pos += self.vel * dt
 
@@ -37,6 +40,12 @@ class LocalPSOBoidsAgent(BoidsAgent):
         if fitness < self.pbest_time:   
             self.pbest_time = fitness
             self.pbest_position = self.pos.copy()
+
+    def _limit_vector(self, vector, max_val):
+        norm = np.linalg.norm(vector)
+        if norm > max_val and norm > 0:
+            return (vector / norm) * max_val
+        return vector
 
 
     def _compute_lbest(self, agents_snapshot):

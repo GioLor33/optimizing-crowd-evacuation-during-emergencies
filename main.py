@@ -6,7 +6,6 @@ import time
 from visualization.visualizer import Visualizer
 from environments.environment import Environment
 from parser.config import Config
-from pso_algorithm.psoAgent import LocalPSOBoidsAgent
 
 async def visualization_loop(visualizer):
     assert isinstance(visualizer, Visualizer)

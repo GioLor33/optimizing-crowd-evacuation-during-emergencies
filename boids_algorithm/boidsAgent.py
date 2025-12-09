@@ -1,6 +1,6 @@
 import numpy as np
 from environments.agent import Agent
-from environments.utils import wall_intersection_point
+from environments.utils import intersection_point
 from boids_algorithm.boidsConfig import BoidsConfig
 
 class BoidsAgent (Agent):
@@ -50,6 +50,7 @@ class BoidsAgent (Agent):
         ahead_pos = self.pos + vel_versor * self.wall_avoid_distance
         wall = self.env.check_something_reached(self.pos, ahead_pos, "wall")
         if wall is not None:
+            wall = self.env.get_wall(wall)
             p1 = np.array(wall[0])
             p2 = np.array(wall[1])
             wall_vector = p2 - p1
@@ -105,7 +106,8 @@ class BoidsAgent (Agent):
     def _check_and_resolve_collision(self):
         wall = self.env.check_something_reached(self.prev_pos, self.pos, "wall")
         if wall is not None:
-            wall_center = wall_intersection_point(self.prev_pos, self.pos, wall[0], wall[1])
+            wall = self.env.get_wall(wall)
+            wall_center = intersection_point(self.prev_pos, self.pos, wall[0], wall[1])
             penetration_vector = self.pos - wall_center
             safe_distance = self.agent_size + 0.5
             current_distance = np.linalg.norm(penetration_vector)

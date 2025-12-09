@@ -8,6 +8,10 @@ class Config:
             
         self.algorithm = self.config.get('algorithm', {}).get('name')
         self.dt = self.config.get('algorithm', {}).get('time-step')
+        self.random_seed = self.config.get('algorithm', {}).get('seed', None)
+        if self.random_seed is not None:
+            self.random_seed = int(self.random_seed)
+        print(f"RANDOM SEED SET TO {self.random_seed}")
         
         world = self.config.get('world', {})
         self.world_name = world.get('name')
@@ -16,11 +20,13 @@ class Config:
             [tuple(float(coord) for coord in exit[0]), tuple(float(coord) for coord in exit[1])]
             for exit in world.get('exits', [])
         ]
-        self.walls = [
-            [tuple(float(coord) for coord in wall[0]), tuple(float(coord) for coord in wall[1])]
-            for wall in world.get('walls', [])
-        ] 
-        self.add_external_walls = world.get('add_external_walls')
+        if world.get('walls') is None:
+            self.walls = []
+        else:
+            self.walls = [
+                [tuple(float(coord) for coord in wall[0]), tuple(float(coord) for coord in wall[1])]
+                for wall in world.get('walls', [])
+            ] 
         self.num_agents = int(world.get('num-agents'))
         
         visualization = self.config.get('visualization', {})
@@ -28,7 +34,7 @@ class Config:
         if self.visualization:
             self.window_name = visualization.get('window-name', 'Crowd Simulation')
             self.visualization_dimensions = tuple(
-                int(dim) for dim in visualization.get('window-dimensions', [800, 450])
+                int(dim) for dim in visualization.get('dimensions')
             )            
             
             self.padding = int(visualization.get('padding'))

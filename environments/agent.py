@@ -6,7 +6,7 @@ class Agent:
         self.id = uid
         self.env = env_instance
         self.pos = np.array(self.env.get_random_spawn(), dtype=float)
-        self.target = random.choice(list(self.env.get_safety_exits()))
+        self.target = np.array(self.env.get_random_exit(), dtype=float)
 
         self.vel = (np.random.rand(2) - 0.5) * 2
         self.mass = 1.0 ## TO DO: config file

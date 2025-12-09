@@ -1,5 +1,4 @@
 import numpy as np
-import random
 
 def segments_intersect(A, B, C, D):
     def orient(p, q, r):
@@ -21,15 +20,15 @@ def segments_intersect(A, B, C, D):
 
     return False
 
-def wall_intersection_point(pos, ahead_pos, wall_start, wall_end):
-    x0 = pos[0]
-    y0 = pos[1]
-    x1 = ahead_pos[0]
-    y1 = ahead_pos[1]
-    x2 = wall_start[0]
-    y2 = wall_start[1]
-    x3 = wall_end[0]
-    y3 = wall_end[1]
+def intersection_point(pos_1_start, pos_1_end, pos_2_start, pos_2_end):
+    x0 = pos_1_start[0]
+    y0 = pos_1_start[1]
+    x1 = pos_1_end[0]
+    y1 = pos_1_end[1]
+    x2 = pos_2_start[0]
+    y2 = pos_2_start[1]
+    x3 = pos_2_end[0]
+    y3 = pos_2_end[1]
     
     # det := np.ling.det()
 
@@ -41,9 +40,73 @@ def wall_intersection_point(pos, ahead_pos, wall_start, wall_end):
             [x0-x1, x2-x3],
             [y0-y1, y2-y3]
         ])
+    
+    # Lines are parallel or coincident
+    # TODO: should we handle coincident lines differently?
+    if np.linalg.det(l2) == 0:
+        return None  
+    
     t = np.linalg.det(l1) / np.linalg.det(l2)
     intersection_x = x0 + t * (x1 - x0)
     intersection_y = y0 + t * (y1 - y0)
     
     return np.array([intersection_x, intersection_y])
+
+# def path_intersection_in_time(p1, v1, p2, v2, dt):
+#     dp = p1 - p2
+#     dv = v1 - v2
+    
+#     # If relative velocity is zero: no motion toward each other
+#     if np.allclose(dv, 0):
+#         return None  
+
+#     # Compute t for each component
+#     t_values = []
+#     for i in range(2):
+#         if abs(dv[i]) < 1e-8:
+#             # No solution if dp[i] != 0
+#             if abs(dp[i]) > 1e-8:
+#                 return None  
+#             # This dimension gives no constraint (parallel)
+#         else:
+#             t_values.append(dp[i] / dv[i])
+
+#     # All non-parallel dimensions must agree on t
+#     if len(t_values) == 0:
+#         return None
+#     t = t_values[0]
+#     for ti in t_values[1:]:
+#         if abs(t - ti) > 1e-6:
+#             return None  # no consistent solution
+
+#     return t if t >= 0 and t <= dt else None
+
+def path_intersection_in_time(p1, v1, p2, v2, dt, eps=1e-8):
+    dp = p1 - p2
+    dv = v1 - v2
+
+    # If relative velocity is essentially zero
+    if np.all(np.abs(dv) < eps):
+        return None  # no relative motion → never meet
+
+    # Compute t only where dv != 0
+    mask = np.abs(dv) >= eps
+
+    # If any dp != 0 in a dimension where dv == 0 → no solution
+    if np.any(~mask & (np.abs(dp) >= eps)):
+        return None
+
+    # For dimensions with dv != 0, compute t candidates
+    t_vals = -dp[mask] / dv[mask]
+
+    # All t's must be equal → check variance
+    # Much faster than looping over them
+    if np.max(t_vals) - np.min(t_vals) > 1e-6:
+        return None
+
+    t = t_vals[0]
+
+    return t if 0.0 <= t <= dt else None
+
+    
     

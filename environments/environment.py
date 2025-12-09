@@ -1,5 +1,4 @@
 from environments.utils import segments_intersect
-import random
 import numpy as np
 
 class Environment:
@@ -10,13 +9,15 @@ class Environment:
         assert dimensions[0] > 0 and dimensions[1] > 0, "Dimensions must be positive integers"
         self.__dimensions = dimensions       
 
-        self.__walls = set()
+        self.__walls = list()
         if walls != [None]:
             self.set_walls(walls)
-
-        self.__exits = set()
+        self.add_external_walls()
+        
+        self.__exits = list()
         if exits != [None]:
             self.set_safety_exits(exits)
+            
             
         self.agents = []
         self.initial_agent_count = 0
@@ -39,12 +40,15 @@ class Environment:
                 assert isinstance(wall, list) and len(wall) == 2, "Wall positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
                 for point in wall:
                     assert isinstance(point, tuple) and len(point) == 2, "Wall positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
-                self.__walls.add((tuple(wall[0]), tuple(wall[1])))
+                self.__walls.append((tuple(wall[0]), tuple(wall[1])))
         else:
             raise ValueError("Positions must be provided as a tuple or as a list of tuples")  
            
     def get_walls(self):
         return self.__walls
+    
+    def get_wall(self, i:int):
+        return self.__walls[i]
     
     def add_external_walls(self):
         width, height = self.__dimensions
@@ -53,16 +57,6 @@ class Environment:
         self.set_walls([[(0, 0), (width, 0)]])
         self.set_walls([[(0, height), (width, height)]])
         self.set_walls([[(width, 0), (width, height)]])
-    
-    # def set_safety_exits(self, list_of_exits):
-    #     if isinstance(list_of_exits, list):
-    #         for exit in list_of_exits:
-    #             assert isinstance(exit, list) and len(exit) == 2, "Safety exit positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
-    #             for point in exit:
-    #                 assert isinstance(point, tuple) and len(point) == 2, "Safety exit positions must be provided as a list of two tuples indicating the starting and ending point of the wall"
-    #             self.__exits.add((tuple(exit[0]), tuple(exit[1])))
-    #     else:
-    #         raise ValueError("Safety exit positions must be provided as a tuple or as a list of tuples")
     
     def set_safety_exits(self, list_of_exits):
         if isinstance(list_of_exits, list):
@@ -73,41 +67,53 @@ class Environment:
                 
                 exit_tuple = (tuple(exit[0]), tuple(exit[1]))
 
-                walls_to_add = set()
-                walls_to_remove = set()
-                walls = self.get_walls()
+                # walls_to_add = set()
+                # walls_to_remove = set()
+                # walls = self.__walls
                 
-                for wall in walls:
+                N = len(self.__walls)
+                for i in range(N-1, -1, -1):
+                    wall = self.__walls[i]
                     wall_start, wall_end = wall
                     exit_start, exit_end = exit_tuple
                     
                     # Verify if wall and exit overlap
                     if wall_start[0] == wall_end[0] == exit_start[0] == exit_end[0]:  # vertical
                         if not (exit_end[1] <= wall_start[1] or exit_start[1] >= wall_end[1]):
-                            walls_to_remove.add(wall)
+                            self.__walls.remove(wall)
+                            # walls_to_remove.add(wall)
                             if wall_start[1] < exit_start[1]:
-                                walls_to_add.add((wall_start, (wall_start[0], exit_start[1])))
+                                self.__walls.append((wall_start, (wall_start[0], exit_start[1])))
+                                #walls_to_add.add((wall_start, (wall_start[0], exit_start[1])))
                             if wall_end[1] > exit_end[1]:
-                                walls_to_add.add(((wall_end[0], exit_end[1]), wall_end))
+                                self.__walls.append(((wall_end[0], exit_end[1]), wall_end))
+                                #walls_to_add.add(((wall_end[0], exit_end[1]), wall_end))
                     elif wall_start[1] == wall_end[1] == exit_start[1] == exit_end[1]:  # horizontal
                         if not (exit_end[0] <= wall_start[0] or exit_start[0] >= wall_end[0]):
-                            walls_to_remove.add(wall)
+                            #walls_to_remove.add(wall)
+                            self.__walls.remove(wall)
                             if wall_start[0] < exit_start[0]:
-                                walls_to_add.add((wall_start, (exit_start[0], wall_start[1])))
+                                self.__walls.append((wall_start, (exit_start[0], wall_start[1])))
+                                #walls_to_add.add((wall_start, (exit_start[0], wall_start[1])))
                             if wall_end[0] > exit_end[0]:
-                                walls_to_add.add(((exit_end[0], wall_end[1]), wall_end))
+                                self.__walls.append(((exit_end[0], wall_end[1]), wall_end))
+                                #walls_to_add.add(((exit_end[0], wall_end[1]), wall_end))
 
                 # Update walls
-                self.__walls.difference_update(walls_to_remove)
-                self.__walls.update(walls_to_add)
+                # self.__walls.difference_update(walls_to_remove)
+                # self.__walls.update(walls_to_add)
                 
-                self.__exits.add(exit_tuple)
+                #self.__exits.add(exit_tuple)
+                self.__exits.append(exit_tuple)
         else:
             raise ValueError("Safety exit positions must be provided as a tuple or as a list of tuples")
   
              
     def get_safety_exits(self):
         return self.__exits
+    
+    def get_safety_exits_number(self):
+        return len(self.__exits)
 
     def remove_safety_exit(self, position):
         if position in self.__exits:
@@ -145,10 +151,10 @@ class Environment:
         if pos[0] < 0 or pos[0] > self.__dimensions[0] or pos[1] < 0 or pos[1] > self.__dimensions[1]:
             return None
         
-        for item in to_check:
+        for i, item in enumerate(to_check):
             if segments_intersect(prev_pos, pos,
                                   item[0], item[1]):
-                return item
+                return i
         return None
     
     def check_is_position_free(self, position):
@@ -188,15 +194,18 @@ class Environment:
     ###########################################
     
     def get_random_spawn(self):
-        gx = random.uniform(1, self.__dimensions[0] - 2)
-        gy = random.uniform(1, self.__dimensions[1] - 2)
+        gx = np.random.uniform(1, self.__dimensions[0] - 2)
+        gy = np.random.uniform(1, self.__dimensions[1] - 2)
         if self.check_is_position_free((gx, gy)):
             return (gx, gy)
 
     def get_random_exit(self, overshoot=0.5):
         if not self.__exits:
             raise ValueError("No exits defined in the environment")
-        A, B = random.choice(list(self.__exits))
+
+        exits = list(self.__exits)
+        idx = np.random.choice(len(exits))
+        A, B = exits[idx]
         point = (
             (A[0] + B[0]) / 2,
             (A[1] + B[1]) / 2

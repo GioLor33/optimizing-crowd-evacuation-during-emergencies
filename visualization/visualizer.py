@@ -2,6 +2,7 @@ from pyray import *
 from environments.environment import Environment
 from parser.config import Config
 import time
+import math
 
 # TODO: add buttons to start/pause/stop simulation
 
@@ -26,6 +27,11 @@ class Visualizer:
         self.text_color = config.text_color
         self.title_color = config.title_color
         
+        self.hasGraph = False
+        self.nodes = None
+        
+        self.show_grid = True # TODO: read from config file
+        
         assert isinstance(environment, Environment)
         self.define_environment(environment)
         
@@ -39,9 +45,17 @@ class Visualizer:
         
         # Add functions to show "moving" things on screen
         self.draw_environment()
+        
+        if self.show_grid:
+            self.draw_grid()
+        
+        if self.hasGraph:
+            self.draw_graph()
+            
         self.draw_agents()
         self.add_env_description()
         self.add_time_info()
+        
         
         end_drawing()
         
@@ -55,41 +69,69 @@ class Visualizer:
                             )
         print("Environment scale in visualizer set to: " + str(self.scale_env))
         
-    def draw_environment(self):
-        # Draw external outline of the environment
-        draw_rectangle_lines(
-            self.env_to_screen((0, 0))[0], 
-            self.env_to_screen((0, 0))[1], 
-            self.env_to_screen((self.environment.get_dimensions()[0], self.environment.get_dimensions()[1]))[0] - self.env_to_screen((0, 0))[0], 
-            self.env_to_screen((self.environment.get_dimensions()[0], self.environment.get_dimensions()[1]))[1] - self.env_to_screen((0, 0))[1], 
-            RED
-        )
-        
+    def draw_environment(self):        
         if self.environment is not None:
             for wall in self.environment.get_walls():
-                self.draw_walls(wall)
+                self.draw_wall(wall)
             for exit in self.environment.get_safety_exits():
-                self.draw_exits(exit)
+                self.draw_exit_with_boundaries(exit)
     
-    def draw_walls(self, wall):
+    def draw_wall(self, wall):
         w_starting_pos, w_ending_pos = wall
+        w_starting_pos_screen = self.env_to_screen(w_starting_pos)
+        w_ending_pos_screen = self.env_to_screen(w_ending_pos)
         draw_line(
-            self.env_to_screen(w_starting_pos)[0], 
-            self.env_to_screen(w_starting_pos)[1], 
-            self.env_to_screen(w_ending_pos)[0], 
-            self.env_to_screen(w_ending_pos)[1], 
+            w_starting_pos_screen[0], 
+            w_starting_pos_screen[1], 
+            w_ending_pos_screen[0], 
+            w_ending_pos_screen[1], 
             self.walls_color
         )
         
-    def draw_exits(self, exit):
+    def draw_exit(self, exit):
         e_starting_pos, e_ending_pos = exit
+        e_starting_pos_screen = self.env_to_screen(e_starting_pos)
+        e_ending_pos_screen = self.env_to_screen(e_ending_pos)
         draw_line(
-            self.env_to_screen(e_starting_pos)[0], 
-            self.env_to_screen(e_starting_pos)[1], 
-            self.env_to_screen(e_ending_pos)[0], 
-            self.env_to_screen(e_ending_pos)[1], 
+            e_starting_pos_screen[0], 
+            e_starting_pos_screen[1], 
+            e_ending_pos_screen[0], 
+            e_ending_pos_screen[1], 
             self.exits_color
         )
+    
+
+    def draw_exit_with_boundaries(self, exit, boundary_length=4):
+        (x1, y1), (x2, y2) = exit
+
+        # Convert to screen coordinates
+        x1s, y1s = self.env_to_screen((x1, y1))
+        x2s, y2s = self.env_to_screen((x2, y2))
+
+        # Draw main exit line
+        draw_line(x1s, y1s, x2s, y2s, self.exits_color)
+
+        # Compute perpendicular direction
+        dx = x2 - x1
+        dy = y2 - y1
+        length = math.sqrt(dx*dx + dy*dy)
+        px = -dy / length
+        py = dx / length
+
+        # Boundary length in screen space (optional: transform)
+        B = boundary_length
+
+        # Starting point boundaries
+        sx1, sy1 = x1s + px * B, y1s + py * B
+        sx2, sy2 = x1s - px * B, y1s - py * B
+        draw_line(int(sx1), int(sy1), int(sx2), int(sy2), self.exits_color)
+
+        # Ending point boundaries
+        ex1, ey1 = x2s + px * B, y2s + py * B
+        ex2, ey2 = x2s - px * B, y2s - py * B
+        draw_line(int(ex1), int(ey1), int(ex2), int(ey2), self.exits_color)
+
+        
         
     def draw_agents(self):
         agents = self.environment.get_agents()
@@ -98,28 +140,76 @@ class Visualizer:
         
         for agent in agents:
             a_pos = agent.get_position()
+            a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
+            # if agent.path is not None:
+            #     color = self.agents_color
+            # else:
+            #     color = RED
+            color = self.agents_color
             draw_circle(
-                int(self.env_to_screen((a_pos[0], a_pos[1]))[0]), 
-                int(self.env_to_screen((a_pos[0], a_pos[1]))[1]), 
-                max(2, int(3 * self.scale_env / 10)),  # radius scaled to environment size
-                self.agents_color
+                int(a_pos_screen[0]), 
+                int(a_pos_screen[1]), 
+                2,  # radius scaled to environment size
+                color
+            )
+            
+            velocity_screen = agent.vel * 2.5
+            draw_line(
+                int(a_pos_screen[0]), 
+                int(a_pos_screen[1]),
+                int(a_pos_screen[0] + velocity_screen[0]),
+                int(a_pos_screen[1] + velocity_screen[1]),
+                color
             )
         
     def add_title(self):
         # the title is centered at the top of the window
-        font_size = 30
-        draw_text("CROWD SIMULATION IN EVACUATION", self.width // 2 - 300, self.padding, font_size, RED)
-        self.top_border = self.padding + font_size + 30
+        font_size = 27
+        draw_text("CROWD SIMULATION", self.padding, self.padding, font_size, WHITE)
+        draw_text("during", self.padding, self.padding + font_size + 5, font_size, WHITE)
+        draw_text("EVACUATION", self.padding, self.padding + 2 * (font_size + 5), font_size, RED)
         
     def add_legend(self): 
-        lx_pos = self.padding
-        ly_pos = self.env_to_screen((0,0))[1]
+        env_pos = self.env_to_screen((self.environment.get_width(), 0))
+        lx_pos = self.padding + env_pos[0]
+        ly_pos = env_pos[1] #self.top_border + self.padding
+        length_symbol = 20
+        padding_length_symbol_and_text = 10
+        y_after_first = 0
                
         draw_text("Legend:", lx_pos, ly_pos, 20, self.text_color)
-        draw_line(lx_pos, ly_pos + 50, lx_pos + 20, ly_pos + 50, self.walls_color)
-        draw_text("Wall", lx_pos + 30, ly_pos + 40, 20, self.text_color)
-        draw_line(lx_pos, ly_pos + 80, lx_pos + 20, ly_pos + 80, self.exits_color)
-        draw_text("Exit", lx_pos + 30, ly_pos + 70, 20, self.text_color)
+        y_after_first += 40
+        
+        draw_circle(lx_pos + 5, ly_pos + y_after_first + 10, 5, self.agents_color)
+        draw_line(lx_pos + 5, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, self.agents_color)
+        draw_text("Agent", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+        y_after_first += 30
+        
+        draw_line(lx_pos, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, self.exits_color)
+        draw_line(lx_pos, ly_pos + y_after_first + 10 - 5, lx_pos, ly_pos + y_after_first +10 + 5, self.exits_color)
+        draw_line(lx_pos + length_symbol, ly_pos + y_after_first + 10 - 5, lx_pos + length_symbol, ly_pos + y_after_first +10 + 5, self.exits_color)
+        draw_text("Exit", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+        y_after_first += 30
+        
+        draw_line(lx_pos, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, self.walls_color)
+        draw_text("Wall", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+        y_after_first += 30
+        
+        if self.show_grid:
+            grid_color = [200, 200, 200, 50]
+            # horizontal lines
+            draw_line(lx_pos, ly_pos + y_after_first, lx_pos + length_symbol, ly_pos + y_after_first, grid_color)
+            draw_line(lx_pos, ly_pos + y_after_first + 20, lx_pos + length_symbol, ly_pos + y_after_first + 20, grid_color)
+            # vertical lines
+            draw_line(lx_pos, ly_pos + y_after_first, lx_pos, ly_pos + y_after_first + length_symbol, grid_color)
+            draw_line(lx_pos + length_symbol, ly_pos + y_after_first, lx_pos + length_symbol, ly_pos + y_after_first + length_symbol, grid_color)
+            draw_text("(1x1)m cell", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+            y_after_first += 30
+        
+        if self.hasGraph:
+            draw_line(lx_pos, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, [255, 105, 180, 100])
+            draw_text("ACO Graph", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+            y_after_first += 30
         
     def add_env_description(self):
         desc_x = self.padding
@@ -150,3 +240,70 @@ class Visualizer:
     def close(self):
         close_window()
         self.on = False
+        
+    def associate_graph(self, nodes):
+        self.hasGraph = True
+        self.nodes = nodes
+        
+    def remove_graph(self):
+        self.hasGraph = False
+        self.nodes = None
+        
+    def disable_graph(self):
+        self.hasGraph = False
+        
+    def enable_graph(self):
+        if self.nodes is not None:
+            self.hasGraph = True
+        else:
+            print("No graph associated to visualizer. Cannot enable graph visualization. Call enable_graph() function.")
+        
+        
+    def draw_grid(self):
+        dim = self.environment.get_dimensions()
+        # vertical lines
+        for x in range(int(dim[0]) + 1):
+            start_pos = self.env_to_screen((x, 0))
+            end_pos = self.env_to_screen((x, dim[1]))
+            draw_line(
+                start_pos[0],
+                start_pos[1],
+                end_pos[0],
+                end_pos[1],
+                [200, 200, 200, 20]
+            )
+        # horizontal lines
+        for y in range(int(dim[1]) + 1):
+            start_pos = self.env_to_screen((0, y))
+            end_pos = self.env_to_screen((dim[0], y))
+            draw_line(
+                start_pos[0],
+                start_pos[1],
+                end_pos[0],
+                end_pos[1],
+                [200, 200, 200, 20]
+            )
+        
+    def draw_graph(self):
+        if self.nodes is None:
+            print("No graph nodes to draw.")
+            return
+        
+        for node in self.nodes:
+            node_screen = self.env_to_screen(node.pos)
+            draw_circle(
+                int(node_screen[0]),
+                int(node_screen[1]),
+                2,
+                [255, 105, 180, 50]
+            )
+            for neighbor_id in node.edges.keys():
+                neighbor_pos = self.nodes[neighbor_id].pos
+                neighbor_screen = self.env_to_screen(neighbor_pos)
+                draw_line(
+                    int(node_screen[0]),
+                    int(node_screen[1]),
+                    int(neighbor_screen[0]),
+                    int(neighbor_screen[1]),
+                    [255, 105, 180, 50]
+                )

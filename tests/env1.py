@@ -11,7 +11,6 @@ def main():
         walls=[[(1, 1), (1, 2)]],
         exits=[[(0, 4), (4, 0)]]
     )
-    env.add_external_walls()
     
     print(env)
     

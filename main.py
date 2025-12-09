@@ -1,9 +1,9 @@
 import numpy as np
-import random
 import asyncio
 import time
 
 from visualization.visualizer import Visualizer
+#from visualization.visualizerV2 import Visualizer
 from environments.environment import Environment
 from parser.config import Config
 
@@ -19,12 +19,21 @@ async def main_program(visualizer, world, config):
     
     num_agents = config.num_agents 
     dt = config.dt
+    seed = config.random_seed
+    if seed is not None:
+        np.random.seed(seed)
+        print(f"Random seed set to {seed}.")
     
     if config.algorithm == "boids-without-panic":
         from boids_algorithm.crowdSimulator import CrowdSimulator
-        
-        print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
         sim = CrowdSimulator(world, config = config)
+        print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
+    elif config.algorithm == "aco":
+        from aco_algorithm.crowdSimulator import CrowdSimulator
+        sim = CrowdSimulator(world, config = config)
+        visualizer.associate_graph(sim.aco_env.nodes)
+        visualizer.enable_graph()
+        print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")
     elif config.algorithm == "pso-local":
         from pso_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
@@ -40,6 +49,8 @@ async def main_program(visualizer, world, config):
         
         if (end - start) < dt:
             time.sleep(dt - (end - start))
+            
+        #time.sleep(0.2)
             
         if len(sim.agents_escaped) == num_agents:
             break
@@ -59,8 +70,6 @@ async def initialize_main():
         exits=config.exits,
         walls=config.walls
     )
-    if config.add_external_walls:
-        env.add_external_walls()
     
     if config.visualization:
         visualizer = Visualizer(environment=env, config=config)

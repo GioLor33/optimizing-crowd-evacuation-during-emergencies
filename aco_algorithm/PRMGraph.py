@@ -80,56 +80,16 @@ class PRMGraph():
                         p1.edges[p2.id] = cost
                     if p1 not in p2.edges:
                         p2.edges[p1.id] = cost
-
-        
-        # check_node_positions = set()
-        # for id in range(N):
-        #     free = False
-        #     while not free:
-        #         x = np.random.uniform(0, env_instance.get_width())
-        #         y = np.random.uniform(0, env_instance.get_height())
-        #         free = env_instance.check_is_position_free((x,y)) and ((x, y) not in check_node_positions)
-        #     new_node = Node(id, x, y)
-        #     self.nodes.add(new_node)
-        #     check_node_positions.add((x, y))
-            
-        # exits = env_instance.get_safety_exits()
-        # for id, exit_points in enumerate(exits):
-        #     exit_points = np.array(exit_points)
-        #     mid = ((exit_points[0] + exit_points[1]) * 1.0 / 2)
-        #     self.nodes.add(Node(N + id, mid[0], mid[1]))
-        #     self.exit_nodes.add(N + id)
-        
-        # nodes_list = list(self.nodes)
-        # tree = KDTree(np.array([(node.x, node.y) for node in nodes_list]))
-        # for i, p in enumerate(nodes_list):
-        #     p = (p.x, p.y)
-        #     dists, idxs = tree.query(p, k=k+1)
-        #     for dist, j in zip(dists[1:], idxs[1:]):  # skip itself
-        #         p1 = nodes_list[i]
-        #         p2 = nodes_list[j]
-        #         if env_instance.check_something_reached((p1.x, p1.y), (p2.x, p2.y), "wall") is None:
-        #             exit = env_instance.check_something_reached((p1.x, p1.y), (p2.x, p2.y), "exit")
-        #             if exit is not None:
-        #                 p2 = nodes_list[len(self.nodes) - len(env_instance.get_safety_exits()) + exit]
-        #             if p2.id not in p1.edges_check:
-        #                 p1.edges_check.add(p2.id)
-        #             if p1.id not in p2.edges_check:
-        #                 p2.edges_check.add(p1.id)
         
                         
     def run_aco(self, n_iterations=100, alpha=2.0, beta=1.0, evaporation_rate=0.7, Q=100):
         n_nodes = len(self.nodes)
         pheromone = np.ones((n_nodes, n_nodes))
-        
-        # print(f"Nodes checked as safety exits: {self.exit_nodes}")
-        
+                
         for iteration in range(n_iterations):
             all_paths = []
             all_path_lengths = []
-            
-            # print(f"ACO iteration {iteration}/{n_iterations-1}")
-            
+                        
             for agent in self.env.agents:
                 # print(f"\nAgent {agent.id}:")
                 start_pos = agent.pos
@@ -147,13 +107,8 @@ class PRMGraph():
                 path = [start_node_id]
                 visited_id = set(path)
                 
-                # print("Starting while loop")
                 while True:
                     current_node_id = path[-1]
-                    # print("-----------------------------")
-                    # print(f"> Current path: {path}")
-                    # print(f"> Visited_id nodes: {visited_id}")
-                    print(f"> Current node: {current_node_id}")
                     if current_node_id in self.exit_nodes: # reached an exit node
                         # here we should check if the exit corresponds to the agent's target
                         # otherwise we should penalize the visit of this node !! (we do not want the agent to go out from the wrong exit)
@@ -161,7 +116,6 @@ class PRMGraph():
                         break
                     
                     neighbors = self.nodes[current_node_id].edges.items()
-                    # print(f"> Neighbors of current node: {[n for n in neighbors]}")
                     probabilities = []
                     for neighbor_id, cost in neighbors:
                         if neighbor_id not in visited_id:
@@ -170,23 +124,18 @@ class PRMGraph():
                             probabilities.append(tau * eta)
                         else:
                             probabilities.append(0)
-                            
-                    # print(f"> Probabilities: {probabilities}")
-                    
+                                                
                     total = sum(probabilities)
                     if total == 0: # no unvisited_id neighbors
                         break
                     
                     probabilities = [p / total for p in probabilities]
-                    # print(f"> Normalized probabilities: {probabilities}")
                     next_node = np.random.choice([n for n, _ in neighbors], p=probabilities)
-                    # print(f"> Next node chosen: {next_node}")
                     
                     path.append(next_node)
                     visited_id.add(next_node)
-                # print("Exited while loop")
+                    
                 path_length = sum(np.linalg.norm(np.array(self.nodes[path[i]].pos) - np.array(self.nodes[path[i+1]].pos)) for i in range(len(path)-1))
-                # print(f"> Path found for agent {agent.id} during simulation {iteration}: {path} with length {path_length}")
                 all_paths.append(path)
                 all_path_lengths.append(path_length)
                 
@@ -194,17 +143,12 @@ class PRMGraph():
                     agent.path = self.nodes_of(path)
                     agent.path_length = path_length
             
-            # print("\nFinished agents in the loop. Now updating pheromone...")
             # Update pheromone
             pheromone *= (1 - evaporation_rate)
-            # print("> Pheromone updating...")
             for path, length in zip(all_paths, all_path_lengths):
                 if path[-1] in self.exit_nodes:
                     for i in range(len(path) - 1):
                         pheromone[path[i]][path[i+1]] += Q / length
-                    
-            # print(f"{pheromone}")
-            # print("#########################################\n")
     
     def nodes_of(self, path_indices):
         return [np.array(self.nodes[i].pos) for i in path_indices]

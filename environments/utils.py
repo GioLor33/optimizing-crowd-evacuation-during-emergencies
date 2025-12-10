@@ -20,6 +20,39 @@ def segments_intersect(A, B, C, D):
 
     return False
 
+def segments_intersect_new(A, B, C, D):
+    def orient(p, q, r):
+        return np.cross(q - p, r - p)
+
+    A = np.array(A, dtype=float)
+    B = np.array(B, dtype=float)
+    C = np.array(C, dtype=float)
+    D = np.array(D, dtype=float)
+
+    # If C and D are the same point, create a small segment perpendicular to AB
+    if np.linalg.norm(C - D) < 1e-9:
+        AB = B - A
+        perp = np.array([-AB[1], AB[0]], dtype=float)
+        norm = np.linalg.norm(perp)
+        if norm < 1e-9:
+            return False
+        perp = perp / norm
+
+        # Create segment of length 0.5 centered at C
+        half_len = 0.25
+        D = C + perp * half_len
+        C = C - perp * half_len
+
+    o1 = orient(A, B, C)
+    o2 = orient(A, B, D)
+    o3 = orient(C, D, A)
+    o4 = orient(C, D, B)
+
+    if o1 * o2 < 0 and o3 * o4 < 0:
+        return True
+
+    return False
+
 def intersection_point(pos_1_start, pos_1_end, pos_2_start, pos_2_end):
     x0 = pos_1_start[0]
     y0 = pos_1_start[1]

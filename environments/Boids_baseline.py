@@ -1,0 +1,260 @@
+import numpy as np
+import random
+import pyray as pr
+from Environment import Environment
+
+SCALE = 8
+AGENT_SIZE = 5.0
+VISION_RADIUS = 7 * SCALE
+MIN_SEPARATION = 3 * AGENT_SIZE
+WALL_AVOID_DISTANCE = 5 * SCALE
+SPEED_LIMIT = 2.5
+FORCE_LIMIT = 0.3
+
+W_SEEK = 1.0
+W_AVOID = 3.5
+W_SEPARATE = 2.0
+W_ALIGN = 0.5
+W_COHERE = 0.5
+
+# IDs ambiente
+CELL_EXIT = -1
+CELL_EMPTY = 0
+CELL_WALL = 1
+
+# Colori Pygame (RGB tuples)
+COLOR_BACKGROUND = (0, 0, 0)
+COLOR_EXIT = (0, 150, 0)
+COLOR_WALL = (139, 0, 0)
+COLOR_AGENT = (255, 255, 0)
+COLOR_TEXT = (255, 255, 255)
+
+FPS = 60
+
+
+
+class SimEnvironmentAdapter(Environment):
+    def __init__(self, name, dimensions, scale=SCALE, walls=[None], exits=[None]):
+        super().__init__(name, dimensions, walls, exits)
+        self.scale = scale
+        self.rows, self.cols = self.get_dimensions()
+        self.grid_width = self.cols
+        self.grid_height = self.rows
+        self.width = self.cols * self.scale
+        self.height = self.rows * self.scale
+
+    def screen_to_grid(self, x, y):
+        gx = int(x / self.scale)
+        gy = int(y / self.scale)
+        return gx, gy
+
+    def grid_to_screen(self, gx, gy):
+        return np.array([gx * self.scale + self.scale / 2, gy * self.scale + self.scale / 2])
+
+    def get_random_spawn(self):
+        grid = self.get_grid()
+        while True:
+            gx = random.randint(1, self.cols - 2)
+            gy = random.randint(1, self.rows - 2)
+            if grid[gy][gx] == 0:
+                return self.grid_to_screen(gx, gy)
+
+    def get_random_exit(self):
+        exits = list(self.get_safety_exits())
+        if not exits:
+            return np.array([self.width / 2, self.height / 2])
+        target = random.choice(exits)
+        return self.grid_to_screen(target[1], target[0])
+
+
+class SimulationState:
+    def __init__(self, active_agents, escaped_count):
+        self.agents = active_agents
+        self.active_count = len(active_agents)
+        self.escaped_count = escaped_count
+
+
+class Agent:
+    def __init__(self, env_instance, uid):
+        self.id = uid
+        self.env = env_instance
+        self.pos = np.array(self.env.get_random_spawn(), dtype=float)
+        self.target = np.array(self.env.get_random_exit(), dtype=float)
+        self.vel = (np.random.rand(2) - 0.5) * 2
+        self.acc = np.zeros(2, dtype=float)
+        self.max_speed = SPEED_LIMIT
+        self.max_force = FORCE_LIMIT
+
+    def _limit_vector(self, vector, max_val):
+        norm = np.linalg.norm(vector)
+        if norm > max_val and norm > 0:
+            return (vector / norm) * max_val
+        return vector
+
+    def _seek(self, target_pos):
+        desired = target_pos - self.pos
+        dist = np.linalg.norm(desired)
+        if dist == 0: return np.zeros(2)
+
+        desired = desired / dist
+        if dist < self.env.scale * 2:
+            desired *= (dist / (self.env.scale * 2)) * self.max_speed
+        else:
+            desired *= self.max_speed
+
+        steering = desired - self.vel
+        return self._limit_vector(steering, self.max_force)
+
+    def _avoid_walls(self):
+        if np.linalg.norm(self.vel) == 0: return np.zeros(2)
+
+        vel_norm = self.vel / np.linalg.norm(self.vel)
+        ahead_pos = self.pos + vel_norm * WALL_AVOID_DISTANCE
+
+        gx, gy = self.env.screen_to_grid(ahead_pos[0], ahead_pos[1])
+
+        if 0 <= gy < self.env.grid_height and 0 <= gx < self.env.grid_width:
+            grid_val = self.env.get_grid()[gy][gx]
+
+            if grid_val == CELL_WALL:
+                wall_center = self.env.grid_to_screen(gx, gy)
+                flee_dir = ahead_pos - wall_center
+
+                if np.linalg.norm(flee_dir) > 0:
+                    flee_dir = (flee_dir / np.linalg.norm(flee_dir)) * self.max_speed
+
+                steering = flee_dir - self.vel
+                return self._limit_vector(steering, self.max_force * 2)
+
+        return np.zeros(2)
+
+    def _flock(self, agents_snapshot):
+        sep = np.zeros(2);
+        ali = np.zeros(2);
+        coh = np.zeros(2)
+        count = 0
+
+        for other in agents_snapshot:
+            if other.id == self.id: continue
+
+            diff = self.pos - other.pos
+            dist = np.linalg.norm(diff)
+
+            if 0 < dist < VISION_RADIUS:
+                if dist < MIN_SEPARATION:
+                    diff /= dist
+                    sep += diff
+                ali += other.vel
+                coh += other.pos
+                count += 1
+
+        if np.linalg.norm(sep) > 0:
+            sep = (sep / np.linalg.norm(sep)) * self.max_speed
+            sep = self._limit_vector(sep - self.vel, self.max_force)
+
+        if count > 0:
+            ali /= count
+            if np.linalg.norm(ali) > 0:
+                ali = (ali / np.linalg.norm(ali)) * self.max_speed
+                ali = self._limit_vector(ali - self.vel, self.max_force)
+            coh /= count
+            coh = self._seek(coh)
+
+        return sep, ali, coh
+
+    def _check_and_resolve_collision(self):
+        gx, gy = self.env.screen_to_grid(self.pos[0], self.pos[1])
+
+        if 0 <= gy < self.env.grid_height and 0 <= gx < self.env.grid_width:
+            grid_val = self.env.get_grid()[gy][gx]
+
+            if grid_val == CELL_WALL:
+                wall_center = self.env.grid_to_screen(gx, gy)
+                penetration_vector = self.pos - wall_center
+                min_distance_to_exit = (self.env.scale / 2.0) + AGENT_SIZE
+                current_distance = np.linalg.norm(penetration_vector)
+
+                if current_distance < min_distance_to_exit:
+                    overlap = min_distance_to_exit - current_distance
+
+                    if current_distance > 0:
+                        push_direction = penetration_vector / current_distance
+                        self.pos += push_direction * overlap
+                        self.vel = self.vel - 2 * np.dot(self.vel, push_direction) * push_direction
+                        self.vel *= 0.8
+                        return True
+        return False
+
+    def update(self, agents_snapshot):
+        self.acc *= 0
+
+        f_seek = self._seek(self.target) * W_SEEK
+        f_avoid = self._avoid_walls() * W_AVOID
+        f_sep, f_ali, f_coh = self._flock(agents_snapshot)
+
+        if np.linalg.norm(f_avoid) > 0.1:
+            self.acc += f_avoid
+            self.acc += f_sep * W_SEPARATE * 0.8
+        else:
+            self.acc += f_seek
+            self.acc += (f_sep * W_SEPARATE)
+            self.acc += (f_ali * W_ALIGN)
+            self.acc += (f_coh * W_COHERE)
+
+        self.vel += self.acc
+        self.vel = self._limit_vector(self.vel, self.max_speed)
+        self.pos += self.vel
+        self._check_and_resolve_collision()
+        w, h = self.env.width, self.env.height
+        if self.pos[0] < AGENT_SIZE: self.pos[0] = AGENT_SIZE; self.vel[0] *= -1
+        if self.pos[0] > w - AGENT_SIZE: self.pos[0] = w - AGENT_SIZE; self.vel[0] *= -1
+        if self.pos[1] < AGENT_SIZE: self.pos[1] = AGENT_SIZE; self.vel[1] *= -1
+        if self.pos[1] > h - AGENT_SIZE: self.pos[1] = h - AGENT_SIZE; self.vel[1] *= -1
+
+    def check_exit_reached(self):
+        gx, gy = self.env.screen_to_grid(self.pos[0], self.pos[1])
+        if 0 <= gy < self.env.grid_height and 0 <= gx < self.env.grid_width:
+            return self.env.get_grid()[gy][gx] == CELL_EXIT
+        return False
+
+
+class CrowdSimulator:
+    def __init__(self, environment_input, num_agents=200):
+        self.env = environment_input
+        self.agents = [Agent(self.env, i) for i in range(num_agents)]
+        self.escaped_count = 0
+
+    def update(self):
+        active_agents_data = []
+        survivors = []
+        snapshot = list(self.agents)
+        for agent in self.agents:
+            agent.update(snapshot)
+            if agent.check_exit_reached():
+                self.escaped_count += 1
+            else:
+                survivors.append(agent)
+                active_agents_data.append({
+                    'id': agent.id,
+                    'pos': (float(agent.pos[0]), float(agent.pos[1])),
+                    'vel': (float(agent.vel[0]), float(agent.vel[1]))
+                })
+
+        self.agents = survivors
+        return SimulationState(active_agents_data, self.escaped_count)
+
+#TestRUN with simple scenario and only 5 frames
+if __name__ == "__main__":
+    dims = (80, 120)
+    rows, cols = dims
+    my_exits = [(dims[0] - 1, 60), (dims[0] - 1, 61), (dims[0] - 1, 62)]
+    env_adapter = SimEnvironmentAdapter("TestWorld", dims, scale=8, exits=my_exits)
+    env_adapter.add_external_walls()
+    env_adapter.set_walls([(40, 40), (40, 41), (40, 42)])
+    sim = CrowdSimulator(env_adapter, num_agents=50)
+    # Run 5 frames
+    for i in range(5):
+        state = sim.update()
+        if state.agents:
+            print(f"Frame {i}: Agent 0 Pos: {state.agents[0]['pos']}")
+

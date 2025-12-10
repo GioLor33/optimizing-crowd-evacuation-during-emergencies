@@ -1,7 +1,6 @@
 import numpy as np
 from boids_algorithm.boidsAgent import BoidsAgent
 from parser.config import Config
-from boids_algorithm.boidsConfig import BoidsConfig
 
 class CrowdSimulator:
     def __init__(self, world, config):

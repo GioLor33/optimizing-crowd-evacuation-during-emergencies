@@ -5,7 +5,6 @@ from environments.utils import segments_intersect, intersection_point, path_inte
 class AcoAgent(Agent):
     def __init__(self, env_instance, uid):
         super().__init__(env_instance, uid)
-        self.max_speed = np.random.uniform(3.0, 5.0)
         init_v = (np.random.rand(2) - 0.5) * 2 # random initial velocity in range [-1,1)
         self.vel = self.max_speed * init_v / np.linalg.norm(init_v)
         self.vel_to_next_node = None
@@ -115,6 +114,10 @@ class AcoAgent(Agent):
     #             future_pos_self = self.pos + self.vel * dt
             
     def node_reached(self):
+        print(f"Agent {self.id} reached node {self.path[0]}.")
         self.path.pop(0)
         if len(self.path) == 0:
             self.safe = True
+            return
+        self.target = self.path[0]
+        print(f"Agent {self.id} NEW target set to {self.target}.")

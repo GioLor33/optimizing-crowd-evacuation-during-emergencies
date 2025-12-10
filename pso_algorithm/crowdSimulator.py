@@ -1,11 +1,10 @@
 from pso_algorithm.psoAgent import LocalPSOAgent
-from pso_algorithm.psoConfig import PSOConfig
 from pso_algorithm.psoAgent import GridFitness
 from parser.config import Config
 
 class CrowdSimulator:
     def __init__(self, environment_input, config: Config):
-        self.config = PSOConfig(config.file_path)
+        self.config = config
         self.env = environment_input
         self.agents_escaped = []
 

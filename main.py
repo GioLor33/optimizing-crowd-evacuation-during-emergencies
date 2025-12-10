@@ -13,16 +13,13 @@ async def visualization_loop(visualizer):
         visualizer.create_drawing()
         await asyncio.sleep(0)  # yield control
 
-async def main_program(visualizer, world, config):
-    assert isinstance(visualizer, Visualizer)
+async def main_program(world, config, visualizer=None):
+    if visualizer is not None:
+        assert isinstance(visualizer, Visualizer)
     loop = asyncio.get_running_loop()
     
     num_agents = config.num_agents 
     dt = config.dt
-    seed = config.random_seed
-    if seed is not None:
-        np.random.seed(seed)
-        print(f"Random seed set to {seed}.")
     
     if config.algorithm == "boids-without-panic":
         from boids_algorithm.crowdSimulator import CrowdSimulator
@@ -31,8 +28,11 @@ async def main_program(visualizer, world, config):
     elif config.algorithm == "aco":
         from aco_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
-        visualizer.associate_graph(sim.aco_env.nodes)
-        visualizer.enable_graph()
+        
+        if visualizer is not None:
+            visualizer.associate_graph(sim.aco_env.nodes)
+            visualizer.enable_graph()
+            
         print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")
     elif config.algorithm == "pso-local":
         from pso_algorithm.crowdSimulator import CrowdSimulator
@@ -50,19 +50,26 @@ async def main_program(visualizer, world, config):
         if (end - start) < dt:
             time.sleep(dt - (end - start))
             
-        #time.sleep(0.2)
-            
+        time.sleep(0.5)
+        
         if len(sim.agents_escaped) == num_agents:
             break
         await asyncio.sleep(0)
         
     print("All agents have evacuated.")
+    
     # TODO: display "Simulation Complete" message on visualizer
         
         
 async def initialize_main():
 
     config = Config("resources/config.yaml")
+    
+    seed = config.random_seed
+    if seed is not None:
+        np.random.seed(seed)
+        print(f"Numpy random seed set to {seed}.")
+    
     if config.world_type == "custom":
         env = Environment(
             name=config.world_name,
@@ -74,17 +81,19 @@ async def initialize_main():
         env = get_scenario_by_name(config.world_type)
         if env is None:
             raise ValueError("Scenario " + str(config.world_type) + " not recognized.")
+        
+    # TODO: we should add the agents in the environment here based on the algorithm simulation we want to perform
 
     if config.visualization:
         visualizer = Visualizer(environment=env, config=config)
 
         await asyncio.gather(
             visualization_loop(visualizer),
-            main_program(visualizer, env, config),
+            main_program(env, config, visualizer),
         )
 
     else:
-        await main_program(None, env)
+        await main_program(env, config)
 
 if __name__ == "__main__":
     asyncio.run(initialize_main())

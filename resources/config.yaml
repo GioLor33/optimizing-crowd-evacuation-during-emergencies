@@ -1,6 +1,6 @@
 algorithm: 
-  name: boids-without-panic #[options: boids-without-panic, boids-with-panic, pso-local]
-  time-step: 0.005
+  name: aco #[options: boids-without-panic, pso-local, aco]
+  time-step: 0.05
   seed: 2
 
 algorithm-parameters:
@@ -27,17 +27,19 @@ algorithm-parameters:
     social_weight: 1.5
 
   aco:
+    # TODO: add ACO parameters here
 
+# TODO : get agents parameter shared among algorihtms here
 
 world:
   type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
-  dimensions: [100,100]
-  num-agents: 100
+  dimensions: [10,10]
+  num-agents: 1
   exits:
-    - [[100, 40], [100, 60]]
+    - [[10, 4], [10, 6]]
   walls:
-    - [[50, 0], [50, 70]]
+    #- [[5, 0], [5, 7]]
 
 visualization:
   activate: true

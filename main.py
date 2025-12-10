@@ -3,9 +3,9 @@ import asyncio
 import time
 
 from visualization.visualizer import Visualizer
-#from visualization.visualizerV2 import Visualizer
 from environments.environment import Environment
 from parser.config import Config
+from environments.scenarios import get_scenario_by_name
 
 async def visualization_loop(visualizer):
     assert isinstance(visualizer, Visualizer)
@@ -61,16 +61,20 @@ async def main_program(visualizer, world, config):
         
         
 async def initialize_main():
-    
+
     config = Config("resources/config.yaml")
-    
-    env = Environment(
-        name=config.world_name,
-        dimensions=config.world_dimensions,
-        exits=config.exits,
-        walls=config.walls
-    )
-    
+    if config.world_type == "custom":
+        env = Environment(
+            name=config.world_name,
+            dimensions=config.world_dimensions,
+            exits=config.exits,
+            walls=config.walls
+        )
+    else:
+        env = get_scenario_by_name(config.world_type)
+        if env is None:
+            raise ValueError("Scenario " + str(config.world_type) + " not recognized.")
+
     if config.visualization:
         visualizer = Visualizer(environment=env, config=config)
 
@@ -78,7 +82,7 @@ async def initialize_main():
             visualization_loop(visualizer),
             main_program(visualizer, env, config),
         )
-        
+
     else:
         await main_program(None, env)
 

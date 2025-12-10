@@ -115,6 +115,15 @@ class Environment:
     def get_safety_exits_number(self):
         return len(self.__exits)
 
+    def get_exit_centroids(self):
+        """Returns a list of (x,y) coordinates representing the centers of the exits"""
+        centroids = []
+        for exit_line in self.__exits:
+            p1, p2 = exit_line
+            midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+            centroids.append(midpoint)
+        return centroids
+
     def remove_safety_exit(self, position):
         if position in self.__exits:
             self.__exits.remove(position)
@@ -148,8 +157,8 @@ class Environment:
             raise ValueError("Positions provided to check_something_reached cannot be None")
         
         # Agent out of the environment bounds
-        if pos[0] < 0 or pos[0] > self.__dimensions[0] or pos[1] < 0 or pos[1] > self.__dimensions[1]:
-            return None
+        # if pos[0] < 0 or pos[0] > self.__dimensions[0] or pos[1] < 0 or pos[1] > self.__dimensions[1]:
+        #     return None
         
         for i, item in enumerate(to_check):
             if segments_intersect(prev_pos, pos,

@@ -214,6 +214,8 @@ class Visualizer:
     def add_env_description(self):
         desc_x = self.padding
         desc_y = self.height - self.bottom_border + 20
+        desc_x = self.padding
+        desc_y = self.height - self.bottom_border + 20
         
         draw_text("Environment Details:", desc_x, desc_y, 20, self.text_color)
         draw_text(f"> Number of safety exits: {len(self.environment.get_safety_exits())}", desc_x, desc_y + 40, 20, self.text_color)

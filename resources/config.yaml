@@ -1,5 +1,5 @@
 algorithm: 
-  name: aco #[options: boids-without-panic, boids-with-panic, pso-local]
+  name: boids-without-panic #[options: boids-without-panic, boids-with-panic, pso-local]
   time-step: 0.005
   seed: 2
 
@@ -7,16 +7,16 @@ algorithm-parameters:
 
   boids: # Boids parameters, used only if "algorithm name: boids"
     weights:
-      seek: 1.0
+      seek: 2.0
       avoid: 3.5
       separation: 2.0
       alignment: 0.5
       cohesion: 0.5
     agents:
       size: 5.0             # is this for plotting?
-      max-speed: 2.5
+      max-speed: 4.0
       max-force: 0.3
-      vision-radius: 7.0
+      vision-radius: 7.0   # 80.0
       min-separation: 15.0  # 3 * agent_size # what is this?
       wall-avoid-distance: 10.0
 
@@ -30,9 +30,9 @@ algorithm-parameters:
 
 
 world:
+  type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
   dimensions: [100,100]
-  #[100, 100]
   num-agents: 100
   exits:
     - [[100, 40], [100, 60]]

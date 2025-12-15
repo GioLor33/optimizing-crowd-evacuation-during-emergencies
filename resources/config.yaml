@@ -21,13 +21,13 @@ algorithm-parameters:
       wall-avoid-distance: 10.0
 
   pso-local:  # PSO parameters
-    neighborhood_radius: 5.0
-    inertia_weight: 0.5
-    cognitive_weight: 1.5
-    social_weight: 1.5
+    neighborhood_radius: 10.0
+    inertia_weight: 0.6
+    cognitive_weight: 1.2
+    social_weight: 1.8
 
   aco:
-    # TODO: add ACO parameters here
+    # TODO: add ACO parameters
 
 # TODO : get agents parameter shared among algorihtms here
 

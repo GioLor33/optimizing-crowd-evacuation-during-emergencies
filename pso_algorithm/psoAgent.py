@@ -13,28 +13,55 @@ class LocalPSOAgent(Agent):
         self.c1 = config.C1
         self.c2 = config.C2
         self.fitness_map = fitness_map
-        self.prev_pos = None
 
-    def update(self, agents_snapshot, env, dt):
-        super().update(agents_snapshot, env, dt)
-        acc = np.zeros(2)
-        self.prev_pos = self.pos.copy()
+    def update(self, agents_snapshot, env, dt, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5, tau=0.5):
 
-        # PSO 
+        # PSO
         lbest_position = self._compute_lbest(agents_snapshot)
         r1, r2 = np.random.rand(), np.random.rand()
+        pso_velocity = self.w * self.vel \
+                    + self.c1 * r1 * (self.pbest_position - self.pos) \
+                    + self.c2 * r2 * (lbest_position - self.pos)
 
-        pso_velocity = self.w * self.vel + self.c1 * r1 * (self.pbest_position - self.pos) + self.c2 * r2 * (lbest_position - self.pos)
-        acc += pso_velocity
+        # Pedestrian dynamics
+        f_agents = self.repulsive_force(
+            agents_snapshot,
+            A=A, B=B, k=k, kappa=kappa
+        )
 
-        self.vel += acc * dt
-        self.vel = self._limit_vector(self.vel, self.max_speed)
+        f_walls = self.obstacle_force(
+            env.get_walls(),
+            A=A, B=B, k=k, kappa=kappa
+        )
+
+        self.f_desired = pso_velocity
+        # With driving force only if the exit is visible
+        if self.target is None:
+            for exit in env.get_safety_exits():
+                target_center = ( (exit[0][0] + exit[1][0]) / 2, (exit[0][1] + exit[1][1]) / 2 )
+                if self.is_visible(target_center, env.get_walls()):
+                    self.target = self.closest_point_on_segment(self.pos, exit[0], exit[1])
+                    self.f_desired = self.driving_force() 
+                    break
+        else:  
+            self.f_desired = self.driving_force()
+       
+        self.f_walls = f_walls
+        self.f_agents = f_agents
+        
+        self.vel += dt * (self.f_desired + (self.f_agents + self.f_walls) / self.mass)
+
+        speed = np.linalg.norm(self.vel)
+        if speed > self.max_speed:
+            self.vel = (self.vel / speed) * self.max_speed
+
         self.pos += self.vel * dt
-                
+
         fitness = self.fitness_map.compute_fitness(self.pos)
-        if fitness < self.pbest_time:   
+        if fitness < self.pbest_time:
             self.pbest_time = fitness
             self.pbest_position = self.pos.copy()
+
 
     def _limit_vector(self, vector, max_val):
         norm = np.linalg.norm(vector)
@@ -87,7 +114,7 @@ class GridFitness:
         
         self.distance_map = np.full((self.grid_width, self.grid_height), np.inf)
         self._compute_distance_map()
-        self.plot_fitness()
+        # self.plot_fitness()
           
 
     # Bresenham's line algorithm to draw walls on the grid

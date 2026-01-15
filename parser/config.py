@@ -71,7 +71,8 @@ class Config:
         self.W_COHERE = float(weights.get('cohesion'))
     
     def parse_aco_algorithm_params(self):
-        pass
+        aco = self.config.get('algorithm-parameters', {}).get('aco', {})
+        self.graph_type = aco.get('graph-type')
     
     def parse_pso_algorithm_params(self):
         pso_section = self.config.get('algorithm-parameters', {}).get('pso-local', {})

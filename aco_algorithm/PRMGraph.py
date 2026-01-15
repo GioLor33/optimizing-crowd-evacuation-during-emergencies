@@ -1,16 +1,11 @@
 from environments.environment import Environment
 import numpy as np
 from scipy.spatial import KDTree
+from aco_algorithm.node import Node
 
 # IMPORTANT: per come è implementato ACO adesso, abbiamo che viene simulato per 100 iterazioni il movimento di ogni singolo agente
 # e alla fine di queste 100 iterazioni viene scelto il percorso migliore per ogni agente (quindi non si basa sui singoli nodi, 
 # ma sugli agenti)
-
-class Node():
-    def __init__(self, id, pos):
-        self.id = id
-        self.pos = pos
-        self.edges = {}  # dictionary with [key, value] as [neighbor_node.id, cost]
 
 class PRMGraph():
     def __init__(self, env_instance: Environment, N: int, k:int):
@@ -29,7 +24,7 @@ class PRMGraph():
         
         self.env = env_instance
         
-        self.nodes = []
+        self.nodes = {}
         self.exit_nodes = set()
         print("Creating PRM graph...")
         self.create_graph(env_instance, N, k)
@@ -81,7 +76,6 @@ class PRMGraph():
                     if p1 not in p2.edges:
                         p2.edges[p1.id] = cost
         
-                        
     def run_aco(self, n_iterations=100, alpha=2.0, beta=1.0, evaporation_rate=0.7, Q=100):
         n_nodes = len(self.nodes)
         pheromone = np.ones((n_nodes, n_nodes))
@@ -97,11 +91,22 @@ class PRMGraph():
                 # TODO: this could be improved by dividing the enviroment in a grid and storing the closest node for each cell
                 # Maybe this implementation will not be precise if the agent is very close to the border of the grid cell, but still
                 
-                #This if beause otherwise at each iteration the starting point would be recomputed, but the result would be the same always
+                #This beause otherwise at each iteration the starting point would be recomputed, but the result would be the same always
                 if agent.start_node_id is not None:
                     start_node_id = agent.start_node_id
                 else:
-                    start_node_id = min(range(n_nodes), key=lambda i: np.linalg.norm(np.array(self.nodes[i].pos) - np.array(start_pos)))
+                    sorted_node_ids = sorted(
+                        range(n_nodes),
+                        key=lambda i: np.linalg.norm(
+                            np.array(self.nodes[i].pos) - np.array(start_pos)
+                        )
+                    )
+                    while len(sorted_node_ids) > 0:
+                        start_node_id = sorted_node_ids.pop(0)
+                        if self.env.check_something_reached((start_pos[0], start_pos[1]), (self.nodes[start_node_id].pos[0], self.nodes[start_node_id].pos[1]), "wall") is None:
+                            break
+                    
+                    #start_node_id = min(range(n_nodes), key=lambda i: np.linalg.norm(np.array(self.nodes[i].pos) - np.array(start_pos)))
                     agent.start_node_id = start_node_id
                 
                 path = [start_node_id]
@@ -139,9 +144,9 @@ class PRMGraph():
                 all_paths.append(path)
                 all_path_lengths.append(path_length)
                 
-                if path[-1] in self.exit_nodes and (path_length < agent.path_length or agent.path is None):
-                    agent.path = self.nodes_of(path)
-                    agent.path_length = path_length
+                # if path[-1] in self.exit_nodes and (path_length < agent.path_length or agent.path is None):
+                #     agent.path = self.nodes_of(path)
+                #     agent.path_length = path_length
             
             # Update pheromone
             pheromone *= (1 - evaporation_rate)
@@ -149,6 +154,8 @@ class PRMGraph():
                 if path[-1] in self.exit_nodes:
                     for i in range(len(path) - 1):
                         pheromone[path[i]][path[i+1]] += Q / length
+                        
+        return pheromone
     
     def nodes_of(self, path_indices):
         return [np.array(self.nodes[i].pos) for i in path_indices]

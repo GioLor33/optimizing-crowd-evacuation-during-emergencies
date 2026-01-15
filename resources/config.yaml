@@ -1,6 +1,6 @@
 algorithm: 
   name: aco #[options: boids-without-panic, pso-local, aco]
-  time-step: 0.05
+  time-step: 0.01
   seed: 2
 
 algorithm-parameters:
@@ -27,6 +27,7 @@ algorithm-parameters:
     social_weight: 1.5
 
   aco:
+    graph-type: PRM   # options: ["grid", "PRM"]
     # TODO: add ACO parameters here
 
 # TODO : get agents parameter shared among algorihtms here
@@ -35,7 +36,7 @@ world:
   type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
   dimensions: [10,10]
-  num-agents: 1
+  num-agents: 10
   exits:
     - [[10, 4], [10, 6]]
   walls:

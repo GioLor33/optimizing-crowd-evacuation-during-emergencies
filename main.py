@@ -44,7 +44,7 @@ async def main_program(world, config, visualizer=None):
     while True:  # Main executions
         start = time.time()
         world.simulation_start_time = start
-        sim.update(dt)
+        # sim.update(dt)
         end = time.time()
         
         if (end - start) < dt:

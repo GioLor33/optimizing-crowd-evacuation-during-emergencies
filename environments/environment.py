@@ -18,7 +18,6 @@ class Environment:
         if exits != [None]:
             self.set_safety_exits(exits)
             
-            
         self.agents = []
         self.initial_agent_count = 0
         self.simulation_time = 0.0
@@ -166,7 +165,7 @@ class Environment:
                 return i
         return None
     
-    def check_is_position_free(self, position):
+    def check_is_position_free(self, position, agent=None):
         for wall in self.__walls:
             if segments_intersect(position, position,
                                   wall[0], wall[1]):
@@ -175,6 +174,18 @@ class Environment:
             if segments_intersect(position, position,
                                   exit[0], exit[1]):
                 return False
+            
+        if agent is not None and len(self.agents) > 0:
+            for other_agent in self.agents:
+                if other_agent.id == agent.id:
+                    if len(self.agents) == 1:
+                        return True
+                    continue
+                
+                dist = np.linalg.norm(other_agent.pos - np.array(position))
+                if dist < (other_agent.radius + agent.radius):
+                    return False
+            
         return True
     
     
@@ -202,11 +213,13 @@ class Environment:
     
     ###########################################
     
-    def get_random_spawn(self):
+    def get_random_spawn(self, agent=None):
         gx = np.random.uniform(1, self.__dimensions[0] - 2)
         gy = np.random.uniform(1, self.__dimensions[1] - 2)
-        if self.check_is_position_free((gx, gy)):
-            return (gx, gy)
+        while not self.check_is_position_free((gx, gy), agent=agent):
+            gx = np.random.uniform(1, self.__dimensions[0] - 2)
+            gy = np.random.uniform(1, self.__dimensions[1] - 2)
+        return (gx, gy)
 
     def get_random_exit(self, overshoot=0.5):
         if not self.__exits:

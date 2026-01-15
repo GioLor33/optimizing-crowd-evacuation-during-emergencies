@@ -133,6 +133,72 @@ class Visualizer:
 
         
         
+    # def draw_agents(self):
+    #     agents = self.environment.get_agents()
+    #     if agents is None:
+    #         return
+        
+    #     for agent in agents:
+    #         a_pos = agent.get_position()
+    #         a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
+            
+    #         draw_circle(
+    #             int(a_pos_screen[0]), 
+    #             int(a_pos_screen[1]), 
+    #             agent.radius * self.scale_env,  # radius scaled to environment size
+    #             [250, 250, 250, 35]
+    #         )
+            
+    #         # if agent.path is not None:
+    #         #     color = self.agents_color
+    #         # else:
+    #         #     color = RED
+    #         color = self.agents_color
+    #         draw_circle(
+    #             int(a_pos_screen[0]), 
+    #             int(a_pos_screen[1]), 
+    #             2,  # radius scaled to environment size
+    #             color
+    #         )
+            
+    #         scale = 5
+            
+    #         velocity_screen = agent.vel * self.scale_env // scale
+    #         draw_line(
+    #             int(a_pos_screen[0]), 
+    #             int(a_pos_screen[1]),
+    #             int(a_pos_screen[0] + velocity_screen[0]),
+    #             int(a_pos_screen[1] + velocity_screen[1]),
+    #             color
+    #         )
+            
+    #         # force_driving_screen = agent.f_desired * self.scale_env // scale
+    #         # draw_line(
+    #         #     int(a_pos_screen[0]), 
+    #         #     int(a_pos_screen[1]),
+    #         #     int(a_pos_screen[0] + force_driving_screen[0]),
+    #         #     int(a_pos_screen[1] + force_driving_screen[1]),
+    #         #     RED
+    #         # )
+            
+    #         # force_agent_screen = agent.f_agents * self.scale_env // scale
+    #         # draw_line(
+    #         #     int(a_pos_screen[0]), 
+    #         #     int(a_pos_screen[1]),
+    #         #     int(a_pos_screen[0] + force_agent_screen[0]),
+    #         #     int(a_pos_screen[1] + force_agent_screen[1]),
+    #         #     ORANGE
+    #         # )
+            
+    #         # force_wall_screen = agent.f_walls * self.scale_env // scale
+    #         # draw_line(
+    #         #     int(a_pos_screen[0]), 
+    #         #     int(a_pos_screen[1]),
+    #         #     int(a_pos_screen[0] + force_wall_screen[0]),
+    #         #     int(a_pos_screen[1] + force_wall_screen[1]),
+    #         #     BLUE
+    #         # )
+    
     def draw_agents(self):
         agents = self.environment.get_agents()
         if agents is None:
@@ -141,27 +207,23 @@ class Visualizer:
         for agent in agents:
             a_pos = agent.get_position()
             a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
+            color = agent.color
             
             draw_circle(
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
                 agent.radius * self.scale_env,  # radius scaled to environment size
-                [250, 250, 250, 20]
+                [color[0], color[1], color[2], 35]
             )
             
-            # if agent.path is not None:
-            #     color = self.agents_color
-            # else:
-            #     color = RED
-            color = self.agents_color
             draw_circle(
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
                 2,  # radius scaled to environment size
-                color
+                [color[0], color[1], color[2], 255]
             )
             
-            scale = 10
+            scale = 5
             
             velocity_screen = agent.vel * self.scale_env // scale
             draw_line(
@@ -169,35 +231,18 @@ class Visualizer:
                 int(a_pos_screen[1]),
                 int(a_pos_screen[0] + velocity_screen[0]),
                 int(a_pos_screen[1] + velocity_screen[1]),
-                color
+                [color[0], color[1], color[2], 255]
             )
             
-            force_driving_screen = agent.f_desired * self.scale_env // scale
-            draw_line(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]),
-                int(a_pos_screen[0] + force_driving_screen[0]),
-                int(a_pos_screen[1] + force_driving_screen[1]),
-                RED
-            )
-            
-            force_agent_screen = agent.f_agents * self.scale_env // scale
-            draw_line(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]),
-                int(a_pos_screen[0] + force_agent_screen[0]),
-                int(a_pos_screen[1] + force_agent_screen[1]),
-                ORANGE
-            )
-            
-            force_wall_screen = agent.f_walls * self.scale_env // scale
-            draw_line(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]),
-                int(a_pos_screen[0] + force_wall_screen[0]),
-                int(a_pos_screen[1] + force_wall_screen[1]),
-                BLUE
-            )
+            target_pos = agent.target
+            if target_pos is not None:
+                target_pos_screen = self.env_to_screen((target_pos[0], target_pos[1]))
+                draw_circle(
+                    int(target_pos_screen[0]),
+                    int(target_pos_screen[1]),
+                    4,
+                    [color[0], color[1], color[2], 255]
+                )
             
         
     def add_title(self):
@@ -284,6 +329,7 @@ class Visualizer:
     def associate_graph(self, nodes):
         self.hasGraph = True
         self.nodes = nodes
+        print(f"Visualizer associated with graph with {len(self.nodes)} nodes.")
         
     def remove_graph(self):
         self.hasGraph = False
@@ -329,14 +375,20 @@ class Visualizer:
             print("No graph nodes to draw.")
             return
         
-        for node in self.nodes:
+        if isinstance(self.nodes, dict):
+            nodes_list = list(self.nodes.values())
+        else:
+            nodes_list = self.nodes
+            
+        for node in nodes_list:
             node_screen = self.env_to_screen(node.pos)
             draw_circle(
                 int(node_screen[0]),
                 int(node_screen[1]),
-                2,
-                [255, 105, 180, 50]
+                5,
+                [255, 105, 180, 100]
             )
+            print(node.edges.keys())
             for neighbor_id in node.edges.keys():
                 neighbor_pos = self.nodes[neighbor_id].pos
                 neighbor_screen = self.env_to_screen(neighbor_pos)

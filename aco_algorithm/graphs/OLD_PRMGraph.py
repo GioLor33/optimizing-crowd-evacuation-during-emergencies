@@ -1,7 +1,7 @@
 from environments.environment import Environment
 import numpy as np
 from scipy.spatial import KDTree
-from aco_algorithm.node import Node
+from aco_algorithm.graphs.node import node
 
 # IMPORTANT: per come è implementato ACO adesso, abbiamo che viene simulato per 100 iterazioni il movimento di ogni singolo agente
 # e alla fine di queste 100 iterazioni viene scelto il percorso migliore per ogni agente (quindi non si basa sui singoli nodi, 

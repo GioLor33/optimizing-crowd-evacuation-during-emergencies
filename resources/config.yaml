@@ -1,7 +1,7 @@
 algorithm: 
   name: aco #[options: boids-without-panic, pso-local, aco]
   time-step: 0.01
-  seed: 2
+  seed: 4
 
 algorithm-parameters:
 
@@ -27,8 +27,17 @@ algorithm-parameters:
     social_weight: 1.5
 
   aco:
-    graph-type: PRM   # options: ["grid", "PRM"]
-    # TODO: add ACO parameters here
+    num-ants-in-simulation: 100
+    num-iterations: 100
+    alpha: 1.0
+    beta: 2.0
+    evaporation-rate: 0.1
+
+    # Graph parameters
+    graph-type: grid   # options: ["grid", "PRM"]
+    n: 50             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
+    m: 25             # used only if graph-type is "grid", number of columns
+    k-connectivity: 2 # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
 
 # TODO : get agents parameter shared among algorihtms here
 

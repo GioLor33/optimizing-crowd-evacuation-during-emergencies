@@ -5,7 +5,7 @@ class Agent:
         self.id = uid
         self.env = env_instance
         
-        self.radius = np.random.uniform(0.4, 0.5)
+        self.radius = np.random.uniform(0.2, 0.4)
         
         self.pos = np.array(self.env.get_random_spawn(agent=self), dtype=float)
         self.global_target = np.array(self.env.get_random_exit(), dtype=float)
@@ -27,6 +27,9 @@ class Agent:
             np.random.randint(50, 255),
             np.random.randint(50, 255)
         )
+        
+        self.safe = False
+        self.fail = False
         
     def get_position(self):
         return self.pos

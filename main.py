@@ -44,13 +44,13 @@ async def main_program(world, config, visualizer=None):
     while True:  # Main executions
         start = time.time()
         world.simulation_start_time = start
-        # sim.update(dt)
+        sim.update(dt)
         end = time.time()
         
         if (end - start) < dt:
             time.sleep(dt - (end - start))
             
-        time.sleep(0.5)
+        #time.sleep(0.5)
         
         if len(sim.agents_escaped) == num_agents:
             break

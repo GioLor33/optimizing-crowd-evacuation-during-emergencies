@@ -12,6 +12,8 @@ class AcoAgent(Agent):
         
         self.safe = False
         
+        self.node_visited = set()
+        
     def node_reached(self):
         self.path.pop(0)
         if len(self.path) == 0:

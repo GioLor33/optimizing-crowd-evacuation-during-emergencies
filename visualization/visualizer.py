@@ -209,6 +209,9 @@ class Visualizer:
             a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
             color = agent.color
             
+            if agent.fail:
+                color = RED
+            
             draw_circle(
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
@@ -388,7 +391,6 @@ class Visualizer:
                 5,
                 [255, 105, 180, 100]
             )
-            print(node.edges.keys())
             for neighbor_id in node.edges.keys():
                 neighbor_pos = self.nodes[neighbor_id].pos
                 neighbor_screen = self.env_to_screen(neighbor_pos)

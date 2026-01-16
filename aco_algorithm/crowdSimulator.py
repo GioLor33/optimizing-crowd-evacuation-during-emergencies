@@ -1,5 +1,3 @@
-from aco_algorithm.GridGraph import GridGraph
-from aco_algorithm.PRMGraph import PRMGraph
 from aco_algorithm.acoAgent import AcoAgent
 from environments.utils import path_intersection_in_time, segments_intersect_new
 import numpy as np
@@ -12,26 +10,36 @@ class CrowdSimulator():
         self.env = environment_input
         num_agents = self.config.num_agents
         #self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
+        print(f"Adding {num_agents} agents to the env")
         for i in range(num_agents):
             self.env.add_agent(AcoAgent(self.env, uid=i))
         self.agents_escaped = []
         
         if config.graph_type == "grid":
-            from aco_algorithm.GridGraph import GridGraph
-            self.aco_env = GridGraph(self.env, n=12, m=10, k=1)
+            from aco_algorithm.graphs.gridGraph import GridGraph
+            self.aco_env = GridGraph(self.env, self.config)
             
         elif config.graph_type == "PRM":
-            # TODO: add parameters N and k in config file
-            dims = self.env.get_dimensions()
-            N = max(dims[0] * dims[1] // 2, 10)
-            k = max(min(N,5), N // 10)
-            print(f"Creating PRM graph with N={N} nodes and k={k} neighbors.")
-            self.aco_env = PRMGraph(self.env, N=N, k=k)
+            from aco_algorithm.graphs.PRMGraph import PRMGraph
+            # # TODO: add parameters N and k in config file
+            # dims = self.env.get_dimensions()
+            # N = max(dims[0] * dims[1] // 2, 10)
+            # k = max(min(N,5), N // 10)
+            self.aco_env = PRMGraph(self.env, self.config)
             
         else:
             raise ValueError("Graph type " + str(config.graph_type) + " not recognized.")
         
-        self.pheromones = self.aco_env.run_aco()
+        print("Starting ACO algorithm...")
+        self.aco_env.initialize_aco_parameters(
+            num_ants=self.config.num_ants,
+            num_iterations=self.config.num_iterations,
+            alpha=self.config.alpha,
+            beta=self.config.beta,
+            evaporation_rate=self.config.evaporation_rate
+        )
+        self.aco_env.run_aco()
+        
         # self.set_agents_next_target()
         self.set_agents_first_target()
         
@@ -70,16 +78,38 @@ class CrowdSimulator():
         
         snapshot = list(self.env.agents)
         for agent in self.env.agents:
+            
+            if agent.fail:
+                continue
+            
             prev_pos = agent.pos.copy()
             agent.update(snapshot, self.env, dt)
             
             # check if target place is reached
-            if np.linalg.norm(agent.pos - agent.target) < 1.0:
+            if np.linalg.norm(agent.pos - agent.target) < 1: # TODO: threshold should be adaptive wrt velocity of the agent 
+                agent.node_visited.add(agent.target_id)
                 
                 if agent.target_id in self.aco_env.exit_nodes:
                     agent.safe = True
                 else:
-                    agent.target_id = np.argmax(self.pheromones[agent.target_id])
+                    max = -1
+                    idx = -1
+                    for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
+                        if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
+                            max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
+                            idx = neighbor_id
+                    # max = np.argmax(self.pheromones[agent.target_id])
+                    # if idx != agent.target_id:
+                    #     agent.target_id = idx
+                    # else:
+                    #     new_target_node_id = np.random.choice(list(self.aco_env.nodes[agent.target_id].edges.keys()))
+                    #     agent.target_id = new_target_node_id
+                    #     print(new_target_node_id)
+                    if idx < 0:
+                        agent.fail = True
+                        print("No valid next target found for agent " + str(agent.id))
+                        continue
+                    agent.target_id = idx
                     agent.target = self.aco_env.nodes[agent.target_id].pos
             
             if agent.safe:
@@ -132,22 +162,22 @@ class CrowdSimulator():
         for agent in self.env.agents:
             # find closest node on the graph to go to, where the straight line from the current position to the node position is not intercepted by a wall
             
-            if isinstance(self.aco_env, PRMGraph):
-                sorted_node_ids = sorted(
-                    range(n_nodes),
-                    key=lambda i: np.linalg.norm(
-                        np.array(self.aco_env.nodes[i].pos) - np.array(agent.pos)
-                    )
+            # if isinstance(self.aco_env, PRMGraph):
+            #     sorted_node_ids = sorted(
+            #         range(n_nodes),
+            #         key=lambda i: np.linalg.norm(
+            #             np.array(self.aco_env.nodes[i].pos) - np.array(agent.pos)
+            #         )
+            #     )
+            # elif isinstance(self.aco_env, GridGraph):
+            sorted_node_ids = sorted(
+                self.aco_env.nodes_id_set,
+                key=lambda node_id: np.linalg.norm(
+                    np.array(self.aco_env.nodes[node_id].pos) - np.array(agent.pos)
                 )
-            elif isinstance(self.aco_env, GridGraph):
-                sorted_node_ids = sorted(
-                    self.aco_env.nodes_id_set,
-                    key=lambda node_id: np.linalg.norm(
-                        np.array(self.aco_env.nodes[node_id].pos) - np.array(agent.pos)
-                    )
-                )
-            else:
-                raise ValueError("Graph type not recognized.")
+            )
+            # else:
+            #     raise ValueError("Graph type not recognized.")
                 
             start_node_id = None
             while len(sorted_node_ids) > 0:

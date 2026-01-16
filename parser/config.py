@@ -72,8 +72,18 @@ class Config:
     
     def parse_aco_algorithm_params(self):
         aco = self.config.get('algorithm-parameters', {}).get('aco', {})
-        self.graph_type = aco.get('graph-type')
+        
+        self.num_ants = int(aco.get('num-ants-in-simulation'))
+        self.num_iterations = int(aco.get('num-iterations'))
+        self.alpha = float(aco.get('alpha'))
+        self.beta = float(aco.get('beta'))
+        self.evaporation_rate = float(aco.get('evaporation-rate'))
     
+        self.graph_type = aco.get('graph-type')
+        self.n = aco.get('n')
+        self.m = aco.get('m')
+        self.k_connectivity = aco.get('k-connectivity')
+        
     def parse_pso_algorithm_params(self):
         pso_section = self.config.get('algorithm-parameters', {}).get('pso-local', {})
         self.NEIGHBORHOOD_RADIUS = pso_section.get('neighborhood_radius', 5.0)

@@ -14,7 +14,7 @@ class Agent:
         self.max_speed = np.random.uniform(3.0, 5.0)
         init_v = (np.random.rand(2) - 0.5) * 2 # random initial velocity in range [-1,1)
         self.vel = self.max_speed * init_v / np.linalg.norm(init_v)
-        self.mass = 1.0 # TODO: config file
+        self.mass = np.random.uniform(45.0, 75.0)
         self.tau = 0.5  
         
         self.f_desired = np.zeros(2)

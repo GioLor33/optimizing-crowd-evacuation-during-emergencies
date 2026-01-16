@@ -85,37 +85,39 @@ class CrowdSimulator():
             prev_pos = agent.pos.copy()
             agent.update(snapshot, self.env, dt)
             
-            # check if target place is reached
-            if np.linalg.norm(agent.pos - agent.target) < 1: # TODO: threshold should be adaptive wrt velocity of the agent 
-                agent.node_visited.add(agent.target_id)
-                
-                if agent.target_id in self.aco_env.exit_nodes:
-                    agent.safe = True
-                else:
-                    max = -1
-                    idx = -1
-                    for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
-                        if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
-                            max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
-                            idx = neighbor_id
-                    # max = np.argmax(self.pheromones[agent.target_id])
-                    # if idx != agent.target_id:
-                    #     agent.target_id = idx
-                    # else:
-                    #     new_target_node_id = np.random.choice(list(self.aco_env.nodes[agent.target_id].edges.keys()))
-                    #     agent.target_id = new_target_node_id
-                    #     print(new_target_node_id)
-                    if idx < 0:
-                        agent.fail = True
-                        print("No valid next target found for agent " + str(agent.id))
-                        continue
-                    agent.target_id = idx
-                    agent.target = self.aco_env.nodes[agent.target_id].pos
-            
-            if agent.safe:
+            extra = 0.1 * agent.vel / np.linalg.norm(agent.vel) # this extra is added because otherwise agents tend to stop on the exit due to the social-force model
+            if self.env.check_something_reached((prev_pos[0], prev_pos[1]), (agent.pos[0] + extra[0], agent.pos[1] + extra[1]), "exit") is not None:
                 self.agents_escaped.append(agent.id)
                 self.env.agents.remove(agent)
                 
+            #if agent.target_id in self.aco_env.exit_nodes:
+            elif agent.target_id in self.aco_env.exit_nodes:
+                continue
+                    
+            # check if target place is reached
+            elif np.linalg.norm(agent.pos - agent.target) < 1: # TODO: threshold should be adaptive wrt velocity of the agent 
+                agent.node_visited.add(agent.target_id)
+                
+                max = -1
+                idx = -1
+                for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
+                    if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
+                        max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
+                        idx = neighbor_id
+                # max = np.argmax(self.pheromones[agent.target_id])
+                # if idx != agent.target_id:
+                #     agent.target_id = idx
+                # else:
+                #     new_target_node_id = np.random.choice(list(self.aco_env.nodes[agent.target_id].edges.keys()))
+                #     agent.target_id = new_target_node_id
+                #     print(new_target_node_id)
+                if idx < 0:
+                    agent.fail = True
+                    print("No valid next target found for agent " + str(agent.id))
+                    continue
+                agent.target_id = idx
+                agent.target = self.aco_env.nodes[agent.target_id].pos
+         
         self.env.simulation_time += dt
 
         return

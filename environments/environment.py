@@ -207,8 +207,7 @@ class Environment:
             closest = self.closest_point_on_segment(agent.pos, exit_seg[0], exit_seg[1])
             if np.linalg.norm(agent.pos - closest) <= margin:
                 return exit_seg
-        return None
-    
+        return None    
     
     
     ###########################################

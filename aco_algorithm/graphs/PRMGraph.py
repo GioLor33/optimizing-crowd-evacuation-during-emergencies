@@ -46,12 +46,26 @@ class PRMGraph(BasicGraph):
 
         # Add exit nodes
         exits = self.env.get_safety_exits()
+        exit_to_nodes = dict()
         for id, exit_points in enumerate(exits):
+            # exit_points = np.array(exit_points)
+            # mid = (exit_points[0] + exit_points[1]) / 2
+            # self.nodes[self.N + id] = Node(self.N + id, mid)
+            # self.exit_nodes.add(self.N + id)
+            # self.N += 1
             exit_points = np.array(exit_points)
-            mid = (exit_points[0] + exit_points[1]) / 2
-            self.nodes[self.N + id] = Node(self.N + id, mid)
-            self.exit_nodes.add(self.N + id)
-            self.N += 1
+            l = np.linalg.norm(exit_points[1] - exit_points[0])
+            
+            e = max(int(l / 0.5), 1) # we will add a node every 0.5 meter, such that it may happen that multiple people can pass through the door at the same time, hence multiple nodes are added to the graph
+            margin = (l - (e - 1) * 0.5) / 2
+            for k in range(e):
+                
+                mid = exit_points[0] + (k / e) * (exit_points[1] - exit_points[0]) + (margin) * (exit_points[1] - exit_points[0]) / l
+                new_node = Node(self.N, mid)
+                self.nodes[self.N] = new_node
+                self.exit_nodes.add(new_node.id)
+                exit_to_nodes[id] = new_node.id
+                self.N += 1
 
         # Build KDTree
         nodes_list = list(self.nodes.values())
@@ -67,12 +81,16 @@ class PRMGraph(BasicGraph):
                 if self.env.check_something_reached((p1.pos[0], p1.pos[1]), (p2.pos[0], p2.pos[1]), "wall") is None:
                     exit_idx = self.env.check_something_reached((p1.pos[0], p1.pos[1]), (p2.pos[0], p2.pos[1]), "exit")
                     if exit_idx is not None:
-                        p2 = nodes_list[len(nodes_list) - len(exits) + exit_idx]
-
-                    cost = np.linalg.norm([p1.pos[0] - p2.pos[0], p1.pos[1] - p2.pos[1]])
-                    if p2 not in p1.edges:
+                        for e in exit_to_nodes[exit_idx]:
+                            p2 = nodes_list[len(nodes_list) - len(exits) + exit_idx]
+                            cost = np.linalg.norm([p1.pos[0] - p2.pos[0], p1.pos[1] - p2.pos[1]])
+                            p1.edges[p2.id] = cost
+                            p2.edges[p1.id] = cost
+                    else:
+                        cost = np.linalg.norm([p1.pos[0] - p2.pos[0], p1.pos[1] - p2.pos[1]])
+                        # if p2 not in p1.edges:
                         p1.edges[p2.id] = cost
-                    if p1 not in p2.edges:
+                        # if p1 not in p2.edges:
                         p2.edges[p1.id] = cost
     
     def nodes_of(self, path_indices):

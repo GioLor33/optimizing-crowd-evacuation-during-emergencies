@@ -35,8 +35,8 @@ algorithm-parameters:
 
     # Graph parameters
     graph-type: grid   # options: ["grid", "PRM"]
-    n: 50             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
-    m: 25             # used only if graph-type is "grid", number of columns
+    n: 20             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
+    m: 10             # used only if graph-type is "grid", number of columns
     k-connectivity: 2 # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
 
 # TODO : get agents parameter shared among algorihtms here
@@ -45,7 +45,7 @@ world:
   type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
   dimensions: [10,10]
-  num-agents: 10
+  num-agents: 1
   exits:
     - [[10, 4], [10, 6]]
   walls:

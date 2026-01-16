@@ -1,4 +1,5 @@
 from environments.environment import Environment
+from aco_algorithm.graphs.node import Node
 import numpy as np
 
 class BasicGraph():
@@ -127,3 +128,4 @@ class BasicGraph():
                 from_node = solution[i]
                 to_node = solution[i + 1]
                 self.pheromone[frozenset({from_node, to_node})] += pheromone_deposit
+                

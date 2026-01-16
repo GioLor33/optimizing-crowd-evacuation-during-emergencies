@@ -378,10 +378,7 @@ class Visualizer:
             print("No graph nodes to draw.")
             return
         
-        if isinstance(self.nodes, dict):
-            nodes_list = list(self.nodes.values())
-        else:
-            nodes_list = self.nodes
+        nodes_list = list(self.nodes.values())
             
         for node in nodes_list:
             node_screen = self.env_to_screen(node.pos)
@@ -401,3 +398,4 @@ class Visualizer:
                     int(neighbor_screen[1]),
                     [255, 105, 180, 50]
                 )
+                

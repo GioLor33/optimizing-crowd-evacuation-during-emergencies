@@ -10,7 +10,6 @@ class CrowdSimulator():
         self.env = environment_input
         num_agents = self.config.num_agents
         #self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
-        print(f"Adding {num_agents} agents to the env")
         for i in range(num_agents):
             self.env.add_agent(AcoAgent(self.env, uid=i))
         self.agents_escaped = []
@@ -30,7 +29,6 @@ class CrowdSimulator():
         else:
             raise ValueError("Graph type " + str(config.graph_type) + " not recognized.")
         
-        print("Starting ACO algorithm...")
         self.aco_env.initialize_aco_parameters(
             num_ants=self.config.num_ants,
             num_iterations=self.config.num_iterations,
@@ -84,39 +82,23 @@ class CrowdSimulator():
             
             prev_pos = agent.pos.copy()
             agent.update(snapshot, self.env, dt)
-            
+                        
             extra = 0.1 * agent.vel / np.linalg.norm(agent.vel) # this extra is added because otherwise agents tend to stop on the exit due to the social-force model
-            if self.env.check_something_reached((prev_pos[0], prev_pos[1]), (agent.pos[0] + extra[0], agent.pos[1] + extra[1]), "exit") is not None:
+            if self.env.check_something_reached(prev_pos, (agent.pos[0] + extra[0], agent.pos[1] + extra[1]), "exit") is not None:
                 self.agents_escaped.append(agent.id)
                 self.env.agents.remove(agent)
                 
             #if agent.target_id in self.aco_env.exit_nodes:
             elif agent.target_id in self.aco_env.exit_nodes:
                 continue
+            
+            elif self.env.check_something_reached(agent.pos, agent.target, "wall") is not None:
+                self.change_target(agent)
                     
             # check if target place is reached
-            elif np.linalg.norm(agent.pos - agent.target) < 1: # TODO: threshold should be adaptive wrt velocity of the agent 
+            elif np.linalg.norm(agent.pos - agent.target) < 1.0:
                 agent.node_visited.add(agent.target_id)
-                
-                max = -1
-                idx = -1
-                for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
-                    if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
-                        max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
-                        idx = neighbor_id
-                # max = np.argmax(self.pheromones[agent.target_id])
-                # if idx != agent.target_id:
-                #     agent.target_id = idx
-                # else:
-                #     new_target_node_id = np.random.choice(list(self.aco_env.nodes[agent.target_id].edges.keys()))
-                #     agent.target_id = new_target_node_id
-                #     print(new_target_node_id)
-                if idx < 0:
-                    agent.fail = True
-                    print("No valid next target found for agent " + str(agent.id))
-                    continue
-                agent.target_id = idx
-                agent.target = self.aco_env.nodes[agent.target_id].pos
+                self.compute_next_target(agent)
          
         self.env.simulation_time += dt
 
@@ -160,45 +142,52 @@ class CrowdSimulator():
         return
     
     def set_agents_first_target(self):
-        n_nodes = len(self.aco_env.nodes)
+        # n_nodes = len(self.aco_env.nodes)
         for agent in self.env.agents:
-            # find closest node on the graph to go to, where the straight line from the current position to the node position is not intercepted by a wall
-            
-            # if isinstance(self.aco_env, PRMGraph):
-            #     sorted_node_ids = sorted(
-            #         range(n_nodes),
-            #         key=lambda i: np.linalg.norm(
-            #             np.array(self.aco_env.nodes[i].pos) - np.array(agent.pos)
-            #         )
-            #     )
-            # elif isinstance(self.aco_env, GridGraph):
-            sorted_node_ids = sorted(
-                self.aco_env.nodes_id_set,
-                key=lambda node_id: np.linalg.norm(
-                    np.array(self.aco_env.nodes[node_id].pos) - np.array(agent.pos)
-                )
-            )
-            # else:
-            #     raise ValueError("Graph type not recognized.")
-                
-            start_node_id = None
-            while len(sorted_node_ids) > 0:
-                start_node_id = sorted_node_ids.pop(0)
-                if self.env.check_something_reached((agent.pos[0], agent.pos[1]), (self.aco_env.nodes[start_node_id].pos[0], self.aco_env.nodes[start_node_id].pos[1]), "wall") is None:
-                    break
-            if start_node_id is None:
-                raise ValueError("No valid start node found for agent " + str(agent.id))
-            
-            # start_node_id = min(range(n_nodes), key=lambda i: np.linalg.norm(np.array(self.nodes[i].pos) - np.array(start_pos)))
-            agent.target_id = start_node_id
-            agent.target = self.aco_env.nodes[start_node_id].pos
-            
+            self.change_target(agent)
     
-    # def set_agents_next_target(self):
-    #     for agent in self.env.agents:
-    #         if agent.path is not None:
-    #             agent.target = agent.path[0]
-    #     return
+    def change_target(self, agent):
+        sorted_node_ids = sorted(
+            self.aco_env.nodes_id_set,
+            key=lambda node_id: np.linalg.norm(
+                np.array(self.aco_env.nodes[node_id].pos) - np.array(agent.pos)
+            )
+        )
+        
+        start_node_id = None
+        while len(sorted_node_ids) > 0:
+            start_node_id = sorted_node_ids.pop(0)
+            if self.env.check_something_reached((agent.pos[0], agent.pos[1]), (self.aco_env.nodes[start_node_id].pos[0], self.aco_env.nodes[start_node_id].pos[1]), "wall") is None:
+                break
+        if start_node_id is None:
+            agent.fail = True
+            print("No valid start node found for agent " + str(agent.id))
+        
+        agent.target_id = start_node_id
+        agent.target = self.aco_env.nodes[start_node_id].pos
+        
+    def compute_next_target(self, agent):
+                
+        max = -1
+        idx = -1
+        
+        for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
+            if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
+                max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
+                idx = neighbor_id
+        # max = np.argmax(self.pheromones[agent.target_id])
+        # if idx != agent.target_id:
+        #     agent.target_id = idx
+        # else:
+        #     new_target_node_id = np.random.choice(list(self.aco_env.nodes[agent.target_id].edges.keys()))
+        #     agent.target_id = new_target_node_id
+        #     print(new_target_node_id)
+        if idx < 0:
+            self.change_target(agent)
+            print("Agent " + str(agent.id) + " has visited all the neighboring nodes of node " + str(agent.target_id) + ", choosing a new target.")
+        else:
+            agent.target_id = idx
+            agent.target = self.aco_env.nodes[agent.target_id].pos
     
     def avoid_agents(self, agent1, agent2, dt):
         # !! In teoria future_pos non dovrebbe servire, controllare e nel caso eliminare !!

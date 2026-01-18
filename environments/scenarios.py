@@ -45,8 +45,6 @@ class CenterSpawnTwoDoorsEnvironment(Environment):
 
         door_size = 2
         mid_y = self.height / 2
-        door_start_y = mid_y - (door_size / 2)
-        door_end_y = mid_y + (door_size / 2)
 
         exits = [
             [(0, mid_y - (door_size / 2)), (0, mid_y + (door_size / 2))],  # Left Exit

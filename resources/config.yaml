@@ -27,11 +27,11 @@ algorithm-parameters:
     social_weight: 1.5
 
   aco:
-    num-ants-in-simulation: 100
-    num-iterations: 100
+    num-ants-in-simulation: 250
+    num-iterations: 1
     alpha: 1.0
     beta: 2.0
-    evaporation-rate: 0.1
+    evaporation-rate: 0.2
 
     # Graph parameters
     graph-type: grid   # options: ["grid", "PRM"]
@@ -42,10 +42,12 @@ algorithm-parameters:
 # TODO : get agents parameter shared among algorihtms here
 
 world:
-  type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: slalom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
+
+  # following parameters are considered only if "type: custom"
   dimensions: [10,10]
-  num-agents: 1
+  num-agents: 50
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]

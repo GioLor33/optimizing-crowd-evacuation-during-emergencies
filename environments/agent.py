@@ -34,7 +34,7 @@ class Agent:
     def get_position(self):
         return self.pos
     
-    def update(self, agent_snapshot, env, dt=0.05, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5, tau=0.5): # TODO: global variables?
+    def update(self, agent_snapshot, env, dt=0.05, A=2.0, B=0.08, k=1.2e5, kappa=2.4e5, tau=0.5): # TODO: global variables?
        
         if self.target is None:
             raise ValueError("Agent " + str(self.id) + " has no target assigned. If no specific target is needed, set target to global target.")

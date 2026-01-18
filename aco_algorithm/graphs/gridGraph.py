@@ -25,7 +25,6 @@ class GridGraph(BasicGraph):
         super().__init__(env_instance, config.n, config.m, config.k_connectivity)
         assert config.k_connectivity in [1, 2], "k must be 1 (4-connectivity) or 2 (8-connectivity)"
         self.create_graph()
-        print("Grid graph created with " + str(len(self.nodes)) + " nodes.")
         
     def compute_node_id(self, i: int, j: int) -> int:
         if i < 0 or i >= self.n or j < 0 or j >= self.m:
@@ -48,7 +47,6 @@ class GridGraph(BasicGraph):
                     id = self.compute_node_id(i, j)
                     self.nodes[id] = Node(id, pos)
                     self.nodes_id_set.add(id)
-                    print(f"Added node {id} at position {pos}")
                     # Like this, not all ids are used, but this enumeration is better to create edges
                     #self.nodes.add(Node(count, pos))
                     #count += 1

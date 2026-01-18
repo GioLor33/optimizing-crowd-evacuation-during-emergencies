@@ -1,6 +1,7 @@
 from environments.environment import Environment
 from aco_algorithm.graphs.node import Node
 import numpy as np
+import time
 
 class BasicGraph():
 
@@ -55,7 +56,7 @@ class BasicGraph():
             all_paths = []
             all_path_lengths = []
             
-            print(f"ACO iteration {iteration+1}/{self.num_iterations}...")
+            #print(f"ACO iteration {iteration+1}/{self.num_iterations}...")
                         
             for agent in range(self.num_ants):
                 start_node_id = ants_pos[agent]

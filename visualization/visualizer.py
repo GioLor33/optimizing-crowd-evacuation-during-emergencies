@@ -29,6 +29,7 @@ class Visualizer:
         
         self.hasGraph = False
         self.nodes = None
+        self.aco_env = None
         
         self.show_grid = True # TODO: read from config file
         
@@ -50,7 +51,10 @@ class Visualizer:
             self.draw_grid()
         
         if self.hasGraph:
-            self.draw_graph()
+            # self.draw_graph()
+            
+            if self.aco_env.pheromone is not None:
+                self.draw_acoPheromone_heatmap()
             
         self.draw_agents()
         self.add_env_description()
@@ -222,7 +226,7 @@ class Visualizer:
             draw_circle(
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
-                2,  # radius scaled to environment size
+                2,  
                 [color[0], color[1], color[2], 255]
             )
             
@@ -329,13 +333,15 @@ class Visualizer:
         close_window()
         self.on = False
         
-    def associate_graph(self, nodes):
+    def associate_graph(self, aco_env):
         self.hasGraph = True
-        self.nodes = nodes
+        self.aco_env = aco_env
+        self.nodes = aco_env.nodes
         print(f"Visualizer associated with graph with {len(self.nodes)} nodes.")
         
     def remove_graph(self):
         self.hasGraph = False
+        self.aco_env = None
         self.nodes = None
         
     def disable_graph(self):
@@ -399,3 +405,73 @@ class Visualizer:
                     [255, 105, 180, 50]
                 )
                 
+    def draw_acoPheromone_heatmap(self):
+        if self.nodes is None:
+            print("No graph nodes to draw.")
+            return
+        
+        
+        # let's cut out the lower pheromone levels to improve visualization
+        max_pheromone = max(self.aco_env.pheromone.values())
+        min_pheromone = min(self.aco_env.pheromone.values())
+        # threshold = min_pheromone + 0.1 * (max_pheromone - min_pheromone)
+        # pheromone_visualizer = {k: v for k, v in self.aco_env.pheromone.items() if v >= threshold}
+        # min_pheromone = threshold
+        
+        pheromone_visualizer = self.aco_env.pheromone
+        
+        pheromone_range = max_pheromone - min_pheromone if max_pheromone != min_pheromone else 1.0
+            
+        for edge_key, pheromone_level in pheromone_visualizer.items():
+            node_ids = list(edge_key)
+            node1 = self.nodes[node_ids[0]]
+            node2 = self.nodes[node_ids[1]]
+            node1_screen = self.env_to_screen(node1.pos)
+            node2_screen = self.env_to_screen(node2.pos)
+            
+            # Normalize pheromone level to [0, 1]
+            normalized_level = (pheromone_level - min_pheromone) / pheromone_range
+            
+            # Map to color (e.g., from blue to red)
+            r = int(255 * normalized_level)
+            g = 0
+            b = int(255 * (1 - normalized_level))
+            color = self.colormap(normalized_level)
+            
+            draw_line(
+                int(node1_screen[0]),
+                int(node1_screen[1]),
+                int(node2_screen[0]),
+                int(node2_screen[1]),
+                color
+            )
+        
+    def colormap(self, t):
+        t = max(0.0, min(1.0, t))
+
+        if t < 0.25:
+            # blue → cyan
+            u = t / 0.25
+            r = 0
+            g = int(255 * u)
+            b = 255
+        elif t < 0.5:
+            # cyan → green
+            u = (t - 0.25) / 0.25
+            r = 0
+            g = 255
+            b = int(255 * (1 - u))
+        elif t < 0.75:
+            # green → yellow
+            u = (t - 0.5) / 0.25
+            r = int(255 * u)
+            g = 255
+            b = 0
+        else:
+            # yellow → red
+            u = (t - 0.75) / 0.25
+            r = 255
+            g = int(255 * (1 - u))
+            b = 0
+
+        return [r, g, b, 220]

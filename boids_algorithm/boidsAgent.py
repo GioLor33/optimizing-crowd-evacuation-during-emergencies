@@ -2,200 +2,127 @@ import numpy as np
 import math
 from environments.agent import Agent
 
+
 class BoidsAgent(Agent):
-    def __init__(self, environment, config, start_pos=None, uid=None):
-        if uid is None:
-            uid = id(self)
-        super().__init__(environment, uid)
+    def __init__(self, environment, config, start_pos=None):
+        super().__init__(environment, id(self))
+        start = start_pos if start_pos is not None else self.env.get_random_spawn()
+        self.sfm_A = 10.0
+        self.sfm_B = 0.8
+        self.sfm_k = 500.0
+        self.sfm_kappa = 1000.0
+        self.mass = 80.0
+        self.pos = np.array(start, dtype=float)
+        self.prev_pos = self.pos.copy()
+        self.vel = np.random.uniform(-1, 1, 2)
+        self.acc = np.zeros(2)
+        self.radius = getattr(config, 'agent_radius', 0.3)
+        self.base_speed = getattr(config, 'max_speed', 2.0)
+        self.mass = getattr(config, 'mass', 1.0)
+        self.tau = getattr(config, 'tau', 0.5)
+        self.vision_radius = getattr(config, 'vision_radius', 10.0)
+        self.min_separation = getattr(config, 'min_separation', 1.0)
+        self.exits = [(np.array(p1), np.array(p2)) for p1, p2 in self.env.get_safety_exits()]
 
-        if start_pos is not None:
-            self.pos = np.array(start_pos, dtype=float)
-            self.prev_pos = self.pos.copy()
-        else:
-            self.prev_pos = self.pos.copy()
-
-        self.config = config
-
-        # --- PHYSICAL PARAMETERS ---
-        self.max_speed = getattr(config, 'SPEED_LIMIT', 3.0)
-        self.radius = getattr(config, 'AGENT_SIZE', 0.3)
-        self.vision_radius = getattr(config, 'VISION_RADIUS', 80.0)
-        self.tau = 0.1  # Instant acceleration
-        self.mass = 1.0
-
-        # --- FIX: ASSIGN DEFAULT TARGET ---
-        # If the agent has no target, pick the first exit from the environment
-        if self.target is None:
-            if hasattr(self.env, 'exits') and len(self.env.exits) > 0:
-                # Assign the first exit as the target
-                self.target = self.env.exits[0]
-            else:
-                # Warn if no exits exist (agent will stay still)
-                print(f"Warning: Agent {self.id} has no target and environment has no exits.")
-
-        # --- WEIGHTS (Linked to Config) ---
         self.weights = {
-            'sfm_driving': getattr(config, 'W_SEEK', 2.0),
-            'sfm_agent': getattr(config, 'W_SEPARATE', 2.0),
-            'sfm_wall': getattr(config, 'W_AVOID', 3.5),
-            'boids_align': getattr(config, 'W_ALIGN', 0.5),
-            'boids_cohere': getattr(config, 'W_COHERE', 0.5)
+            'ali': getattr(config, 'w_align', 1.0),
+            'coh': getattr(config, 'w_cohere', 1.0),
+            'sfm_walls': 1.0,
+            'sfm_agents': 1.0
         }
+        self.cur_speed = self.base_speed
+        angles = [i * (math.pi / 12) for i in range(1, 13)]
+        self.rays = []
+        for a in angles:
+            c, s = math.cos(a), math.sin(a)
+            self.rays.extend([np.array([[c, -s], [s, c]]), np.array([[c, s], [-s, c]])])
 
-    def update(self, dt, agent_snapshot):
+    def update(self, dt, agents_snapshot=None):
         self.prev_pos[:] = self.pos
-
-        # 1. Driving Force: Pulls to center of door
-        f_driving = self.driving_force()
-
-        # 2. Agent Repulsion
-        f_repulsion = self.repulsive_force(agent_snapshot, A=1.5, B=0.1, k=500.0, kappa=0.0)
-
-        # 3. Wall Repulsion
-        walls = self.env.get_walls() if hasattr(self.env, 'get_walls') else []
-        f_wall = self.obstacle_force(walls, A=2.0, B=0.1, k=800.0, kappa=0.0, r_i=self.radius * 0.2)
-
-        # 4. Flocking
-        neighbors = self._get_neighbors(agent_snapshot)
-        f_align = self._compute_alignment(neighbors)
-        f_cohere = self._compute_cohesion(neighbors)
-
-        # 5. Anti-Stuck Jitter
-        f_jitter = np.zeros(2)
-        if np.linalg.norm(self.vel) < 0.2:
-            f_jitter = (np.random.rand(2) - 0.5) * 5.0
-
-        # Sum forces
-        total_force = (
-                f_driving * self.weights['sfm_driving'] +
-                f_repulsion * self.weights['sfm_agent'] +
-                f_wall * self.weights['sfm_wall'] +
-                f_align * self.weights['boids_align'] +
-                f_cohere * self.weights['boids_cohere'] +
-                f_jitter
-        )
-
-        acc = total_force / self.mass
-        self.vel = self.vel + acc * dt
-
+        visual_target = self.vision(self.get_smart_target())
+        self.target = visual_target
+        dist_sq = np.sum((visual_target - self.pos) ** 2)
+        if dist_sq < 16.0:
+            self.cur_speed = self.base_speed * 1.5
+        else:
+            self.cur_speed = self.base_speed
+        self.max_speed = self.cur_speed
+        f_drive = self.driving_force()
+        f_walls = self.obstacle_force(self.env.get_walls()) * self.weights['sfm_walls']
+        f_sfm_agents = self.repulsive_force(agents_snapshot) * self.weights['sfm_agents']
+        ali, coh = self._get_boids_vectors(agents_snapshot)
+        f_flock = (ali * self.weights['ali']) + (coh * self.weights['coh'])
+        total_force = f_drive + f_walls + f_sfm_agents + f_flock
+        self.acc = total_force / self.mass
+        self.vel += self.acc * dt
         speed = np.linalg.norm(self.vel)
-        if speed > self.max_speed:
-            self.vel = (self.vel / speed) * self.max_speed
+        if speed > self.cur_speed:
+            self.vel = (self.vel / speed) * self.cur_speed
 
-        self.pos = self.pos + self.vel * dt
+        self.pos += self.vel * dt
 
-        self._check_and_resolve_collision()
+    def _get_boids_vectors(self, agents_snapshot):
+        ali = np.zeros(2)
+        coh = np.zeros(2)
+        count = 0
 
-    def driving_force(self):
-        # FIX: Safety check for missing target
-        if self.target is None:
-            return np.zeros(2)
+        for other in agents_snapshot:
+            if getattr(other, 'id', id(other)) == self.id: continue
+            other_pos = other.get_position()
+            other_vel = other.get_velocity()
+            dist = np.linalg.norm(self.pos - other_pos)
 
-        target_array = np.array(self.target)
-
-        if target_array.ndim == 1:
-            # Target is a single point [x, y]
-            direction = target_array - self.pos
-        else:
-            # Target is a segment (door) [[x1, y1], [x2, y2]]
-            # We target the CENTER of the door segment
-            try:
-                A, B = target_array[0], target_array[1]
-                door_center = (A + B) / 2.0
-                direction = door_center - self.pos
-            except IndexError:
-                # Fallback if target format is weird
-                return np.zeros(2)
-
-        dist = np.linalg.norm(direction)
-        if dist > 1e-8:
-            direction = direction / dist
-        else:
-            direction = np.zeros(2)
-
-        v_desired = direction * self.max_speed
-        return (v_desired - self.vel) / self.tau
-
-    def obstacle_force(self, walls, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5, r_i=0.3):
-        total = np.zeros(2)
-        for wall in walls:
-            if isinstance(wall, (list, tuple)) and len(wall) >= 2:
-                wA = np.array(wall[0], float)
-                wB = np.array(wall[1], float)
+            if 0 < dist < self.vision_radius:
+                ali += other_vel
+                coh += other_pos
+                count += 1
+        if count > 0:
+            ali /= count
+            if np.linalg.norm(ali) > 0:
+                ali = (ali / np.linalg.norm(ali)) * self.cur_speed
+                ali -= self.vel
+            coh /= count
+            desired = coh - self.pos
+            if np.linalg.norm(desired) > 0:
+                desired = (desired / np.linalg.norm(desired)) * self.cur_speed
+                coh = desired - self.vel
             else:
-                continue
+                coh = np.zeros(2)
 
-            seg = wB - wA
-            seg_len_sq = np.dot(seg, seg)
-            if seg_len_sq == 0:
-                closest = wA
-            else:
-                t = np.dot(self.pos - wA, seg) / seg_len_sq
-                t = np.clip(t, 0, 1)
-                closest = wA + t * seg
+        return ali, coh
 
-            total += self._repulsion_from_point(
-                p_j=closest, v_j=np.zeros(2), r_j=0.0,
-                A=A, B=B, k=k, kappa=kappa, r_i=r_i
-            )
-        return total
-
-    def _check_and_resolve_collision(self):
-        if not hasattr(self.env, 'check_something_reached'): return
-        wall_idx = self.env.check_something_reached(self.prev_pos, self.pos, "wall")
-        if wall_idx is not None:
-            wall = self.env.get_wall(wall_idx)
-            wall_start, wall_end = np.array(wall[0]), np.array(wall[1])
-            hit_point = self._get_wall_intersection(self.prev_pos, self.pos, wall_start, wall_end)
-
-            wall_vec = wall_end - wall_start
-            normal = np.array([-wall_vec[1], wall_vec[0]])
-            normal = normal / (np.linalg.norm(normal) + 1e-8)
-            if np.dot(normal, self.prev_pos - hit_point) < 0: normal = -normal
-
-            self.pos = hit_point + (normal * 0.05)
-            vel_dot_normal = np.dot(self.vel, normal)
-            if vel_dot_normal < 0:
-                self.vel -= normal * vel_dot_normal
-
-    def _get_wall_intersection(self, p1, p2, w1, w2):
-        xdiff = (p1[0] - p2[0], w1[0] - w2[0])
-        ydiff = (p1[1] - p2[1], w1[1] - w2[1])
-
-        def det(a, b): return a[0] * b[1] - a[1] * b[0]
-
-        div = det(xdiff, ydiff)
-        if div == 0: return p2
-        d = (det(p1, p2), det(w1, w2))
-        x = det(d, xdiff) / div
-        y = det(d, ydiff) / div
-        return np.array([x, y])
-
-    def _get_neighbors(self, agents):
-        neighbors = []
-        for other in agents:
-            if other is self: continue
-            other_pos = other.get_position() if hasattr(other, 'get_position') else other.pos
-            if np.linalg.norm(self.pos - other_pos) < self.vision_radius:
-                neighbors.append(other)
-        return neighbors
-
-    def _compute_alignment(self, neighbors):
-        if not neighbors: return np.zeros(2)
-        avg_vel = np.mean([a.vel if hasattr(a, 'vel') else np.zeros(2) for a in neighbors], axis=0)
-        norm = np.linalg.norm(avg_vel)
-        if norm > 0:
-            return ((avg_vel / norm * self.max_speed) - self.vel) / self.tau
-        return np.zeros(2)
-
-    def _compute_cohesion(self, neighbors):
-        if not neighbors: return np.zeros(2)
-        avg_pos = np.mean([a.get_position() if hasattr(a, 'get_position') else a.pos for a in neighbors], axis=0)
-        direction = avg_pos - self.pos
-        dist = np.linalg.norm(direction)
-        if dist > 0:
-            return ((direction / dist * self.max_speed) - self.vel) / self.tau
-        return np.zeros(2)
+    def vision(self, target):
+        to_target = target - self.pos
+        dist = np.linalg.norm(to_target)
+        if dist == 0: return target
+        dir_vec = to_target / dist
+        check_pos = self.pos + (dir_vec * min(dist, self.vision_radius))
+        if not self.env.check_something_reached(self.pos, check_pos, "wall"):
+            return target
+        for rot in self.rays:
+            look_ahead = self.pos + ((rot @ dir_vec) * 4.0)
+            if not self.env.check_something_reached(self.pos, look_ahead, "wall"):
+                return look_ahead
+        return target
 
     def get_smart_target(self):
-        return self.target
+        if not self.exits: return self.pos
+        best, min_d = self.pos, float('inf')
+        for p1, p2 in self.exits:
+            v_ex = p2 - p1
+            len_sq = np.dot(v_ex, v_ex) or 1.0
+            t = np.clip(np.dot(self.pos - p1, v_ex) / len_sq, 0.1, 0.9)
+            pt = p1 + v_ex * t
+            d = np.sum((self.pos - pt) ** 2)
+            if d < min_d: best, min_d = pt, d
+        return best
+
+
+    def get_velocity(self):
+        return self.vel
+
+    def get_position(self):
+        return self.pos
+
+    def get_smart_target_visual(self):
+        return self.vision(self.get_smart_target())

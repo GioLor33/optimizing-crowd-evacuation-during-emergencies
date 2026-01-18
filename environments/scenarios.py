@@ -15,7 +15,6 @@ class BottleneckEnvironment(Environment):
             [(10, 4), (10, 6)]
         ]
         super().__init__("Bottleneck_Scenario", (width, height), walls, exits)
-        self.add_external_walls()
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -55,7 +54,6 @@ class CenterSpawnTwoDoorsEnvironment(Environment):
         ]
 
         super().__init__("Two_Doors_Scenario", (self.width, self.height), walls, exits)
-        self.add_external_walls()
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -107,7 +105,6 @@ class SlalomEnvironment(Environment):
         ]
 
         super().__init__("Slalom_Scenario", (width, height), walls, exits)
-        self.add_external_walls()
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -158,7 +155,6 @@ class EmptyRoomEnvironment(Environment):
         ]
 
         super().__init__("Empty_Room_Scenario", (self.width, self.height), walls, exits)
-        self.add_external_walls()
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []

@@ -1,7 +1,7 @@
 algorithm: 
   name: aco #[options: boids-without-panic, pso-local, aco]
   time-step: 0.01
-  seed: 4
+  seed: 2
 
 algorithm-parameters:
 
@@ -46,6 +46,7 @@ world:
   name: test_environment
   dimensions: [10,10]
   num-agents: 1
+  # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]
   walls:

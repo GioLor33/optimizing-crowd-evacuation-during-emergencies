@@ -5,14 +5,14 @@ from environments.environment import Environment
 
 class BottleneckEnvironment(Environment):
     def __init__(self):
-        width = 50
-        height = 50
+        width = 10
+        height = 10
         walls = [
-            [(25, 0), (25, 20)],
-            [(25, 30), (25, 50)]
+            [(5, 0), (5, 4)],
+            [(5, 6), (5, 10)]
         ]
         exits = [
-            [(49, 12), (49, 15)]
+            [(10, 4), (10, 6)]
         ]
         super().__init__("Bottleneck_Scenario", (width, height), walls, exits)
         self.add_external_walls()
@@ -39,19 +39,19 @@ class BottleneckEnvironment(Environment):
 
 class CenterSpawnTwoDoorsEnvironment(Environment):
     def __init__(self):
-        self.width = 50
-        self.height = 50
+        self.width = 10
+        self.height = 10
 
         walls = []
 
-        door_size = 10
+        door_size = 2
         mid_y = self.height / 2
         door_start_y = mid_y - (door_size / 2)
         door_end_y = mid_y + (door_size / 2)
 
         exits = [
-            [(0, door_start_y), (0, door_end_y)],  # Left Exit
-            [(self.width, door_start_y), (self.width, door_end_y)]  # Right Exit
+            [(0, mid_y - (door_size / 2)), (0, mid_y + (door_size / 2))],  # Left Exit
+            [(self.width, 2), (self.width, 4)]  # Right Exit
         ]
 
         super().__init__("Two_Doors_Scenario", (self.width, self.height), walls, exits)
@@ -93,17 +93,17 @@ class SlalomEnvironment(Environment):
     """
 
     def __init__(self):
-        width = 50
-        height = 50
+        width = 10
+        height = 10
 
         walls = [
-            [(16, 10), (16, 50)],  # Wall 1: Blocks bottom, free at top (y < 10)
-            [(33, 0), (33, 40)]  # Wall 2: Blocks top, free at bottom (y > 40)
+            [(4, 4), (4, 10)],  # Wall 1: Blocks bottom, free at top (y < 10)
+            [(6, 0), (6, 6)]  # Wall 2: Blocks top, free at bottom (y > 40)
         ]
 
         # Single final exit on the right wall
         exits = [
-            [(49, 20), (49, 30)]
+            [(10, 4), (10, 6)]
         ]
 
         super().__init__("Slalom_Scenario", (width, height), walls, exits)
@@ -146,12 +146,12 @@ class EmptyRoomEnvironment(Environment):
     """
 
     def __init__(self):
-        self.width = 50
-        self.height = 50
+        self.width = 10
+        self.height = 10
         walls = []  # No internal obstacles
 
         # One large exit centered on the right
-        door_size = 12
+        door_size = 2
         mid_y = self.height / 2
         exits = [
             [(self.width, mid_y - door_size / 2), (self.width, mid_y + door_size / 2)]

@@ -26,6 +26,7 @@ class Config:
         self.world_name = world.get('name')
         self.world_type = world.get('type', 'custom')
         self.num_agents = int(world.get('num-agents'))
+        # self.spawn_agent_method = world.get('spawn')
         if self.world_type == 'custom':
             self.parse_custom_world(world)
             

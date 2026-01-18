@@ -76,6 +76,7 @@ async def initialize_main():
             dimensions=config.world_dimensions,
             exits=config.exits,
             walls=config.walls
+            #agents_spawn_method=config.spawn_agent_method
         )
     else:
         env = get_scenario_by_name(config.world_type)

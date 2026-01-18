@@ -18,7 +18,6 @@ class Environment:
         if exits != [None]:
             self.set_safety_exits(exits)
             
-            
         self.agents = []
         self.initial_agent_count = 0
         self.simulation_time = 0.0

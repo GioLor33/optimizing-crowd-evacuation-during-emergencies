@@ -1,5 +1,5 @@
 algorithm: 
-  name: pso-local #[options: boids-without-panic, pso-local, aco]
+  name: boids-without-panic #[options: boids-without-panic, pso-local, aco]
   time-step: 0.05
   seed: 2
 
@@ -14,9 +14,9 @@ algorithm-parameters:
       cohesion: 0.5
     agents:
       size: 5.0             # is this for plotting?
-      max-speed: 4.0
+      max-speed: 10.0
       max-force: 0.3
-      vision-radius: 7.0   # 80.0
+      vision-radius: 80.0   # 80.0
       min-separation: 15.0  # 3 * agent_size # what is this?
       wall-avoid-distance: 10.0
 
@@ -35,7 +35,7 @@ world:
   type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
   dimensions: [10,10]
-  num-agents: 1
+  num-agents: 100
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]

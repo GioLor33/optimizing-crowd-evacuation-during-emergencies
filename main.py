@@ -1,6 +1,9 @@
 import numpy as np
 import asyncio
 import time
+import matplotlib
+matplotlib.use('TkAgg')
+
 
 from environments.environment import Environment
 from parser.config import Config
@@ -52,7 +55,8 @@ async def main_program(world, config, visualizer=None):
         end = time.time()
         
         if (end - start) < dt:
-            time.sleep(dt - (end - start))
+            await asyncio.sleep(dt - (end - start))
+            #time.sleep(dt - (end - start))
             
         #time.sleep(0.5)
         

@@ -14,9 +14,9 @@ algorithm-parameters:
       cohesion: 0.5
     agents:
       size: 5.0             # is this for plotting?
-      max-speed: 4.0
+      max-speed: 10.0
       max-force: 0.3
-      vision-radius: 7.0   # 80.0
+      vision-radius: 80.0   # 80.0
       min-separation: 15.0  # 3 * agent_size # what is this?
       wall-avoid-distance: 10.0
 

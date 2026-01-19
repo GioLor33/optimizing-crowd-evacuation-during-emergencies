@@ -37,7 +37,7 @@ class Agent:
        
         if self.target is None:
             raise ValueError("Agent " + str(self.id) + " has no target assigned. If no specific target is needed, set target to global target.")
-       
+
         # x, y = self.target
         # closest_point = self.closest_point_on_segment(self.pos, x, y)
         # direction = closest_point - self.pos
@@ -50,7 +50,7 @@ class Agent:
 
         # v_desired = direction * self.max_speed
         f_desired = self.driving_force()
-        
+
         f_agents = self.repulsive_force(
             agent_snapshot,
             A=A, B=B, k=k, kappa=kappa
@@ -64,7 +64,7 @@ class Agent:
         self.f_desired = f_desired
         self.f_walls = f_walls
         self.f_agents = f_agents
-        
+
         #total_force = f_desired + f_agents + f_walls
 
         self.vel += dt * (f_desired + (f_agents + f_walls) / self.mass)
@@ -89,13 +89,13 @@ class Agent:
 
         if norm < 1e-8:
             #direction = self.vel / (np.linalg.norm(self.vel) + 1e-8)  # avoid division by zero
-            direction = np.zeros(2) 
+            direction = np.zeros(2)
         else:
-            direction /= norm 
-            
+            direction /= norm
+
         v_des = direction * self.max_speed
         return (v_des - self.vel) / self.tau
-    
+
 
     def repulsive_force(self, agents, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5):
         total = np.zeros(2)
@@ -104,9 +104,9 @@ class Agent:
                 continue
             r_j = other.radius if hasattr(other, "radius") else self.radius
             total += self._repulsion_from_point(
-                p_j = other.pos,
-                v_j = other.vel,
-                r_j = r_j,
+                p_j=other.pos,
+                v_j=other.vel,
+                r_j=r_j,
                 A=A, B=B, k=k, kappa=kappa
             )
         return total
@@ -134,11 +134,11 @@ class Agent:
                 r_j = 0.0,
                 A=A, B=B, k=k, kappa=kappa,
             )
-        
+
         return total
 
 
-    def _repulsion_from_point(self, p_j, v_j, r_j, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5):
+    def _repulsion_from_point(self, p_j, v_j, r_j, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5 , r_i=None):
         d_vec = self.pos - p_j
         dist = np.linalg.norm(d_vec)
 
@@ -152,7 +152,7 @@ class Agent:
 
         t_ij = np.array([-n_ij[1], n_ij[0]])
         r_ij = self.radius + r_j
-        
+
         # g(x) function
         # overlap = r_ij - dist
         # g = max(overlap, 0.0)
@@ -172,11 +172,11 @@ class Agent:
 
     @staticmethod
     def closest_point_on_segment(P, A, B):
-    
+
         A = np.array(A, float)
         B = np.array(B, float)
         P = np.array(P, float)
-        
+
         AB = B - A
         if np.allclose(AB, 0):
             return A

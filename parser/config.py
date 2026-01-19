@@ -1,13 +1,19 @@
 import yaml
 
 class Config:
-    def __init__(self, config_file):
+    
+    def __init__(self, config_file = None):
+        
+        if config_file is None:
+            self.config = dict()
+            return
+        
         with open(config_file, 'r') as file:
             self.config = yaml.safe_load(file)
         self.file_path = config_file
             
         self.algorithm = self.config.get('algorithm', {}).get('name')
-        if self.algorithm == 'boids-without-panic':
+        if self.algorithm == 'boids':
             self.parse_boids_algorithm_params()
         elif self.algorithm == 'aco':
             self.parse_aco_algorithm_params()
@@ -26,6 +32,7 @@ class Config:
         self.world_name = world.get('name')
         self.world_type = world.get('type', 'custom')
         self.num_agents = int(world.get('num-agents'))
+        # self.spawn_agent_method = world.get('spawn')
         if self.world_type == 'custom':
             self.parse_custom_world(world)
             
@@ -71,8 +78,19 @@ class Config:
         self.W_COHERE = float(weights.get('cohesion'))
     
     def parse_aco_algorithm_params(self):
-        pass
+        aco = self.config.get('algorithm-parameters', {}).get('aco', {})
+        
+        self.num_ants = int(aco.get('num-ants-in-simulation'))
+        self.num_iterations = int(aco.get('num-iterations'))
+        self.alpha = float(aco.get('alpha'))
+        self.beta = float(aco.get('beta'))
+        self.evaporation_rate = float(aco.get('evaporation-rate'))
     
+        self.graph_type = aco.get('graph-type')
+        self.n = aco.get('n')
+        self.m = aco.get('m')
+        self.k_connectivity = aco.get('k-connectivity')
+        
     def parse_pso_algorithm_params(self):
         pso_section = self.config.get('algorithm-parameters', {}).get('pso-local', {})
         self.NEIGHBORHOOD_RADIUS = pso_section.get('neighborhood_radius', 5.0)

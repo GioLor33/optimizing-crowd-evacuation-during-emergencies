@@ -1,4 +1,3 @@
-from aco_algorithm.PRMGraph import PRMGraph
 from aco_algorithm.acoAgent import AcoAgent
 from environments.utils import path_intersection_in_time, segments_intersect_new
 import numpy as np
@@ -9,40 +8,94 @@ class CrowdSimulator():
         self.config = config
         
         self.env = environment_input
-        num_agents = self.config.num_agents
-        self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
         self.agents_escaped = []
         
-        # TODO: add parameters N and k in config file
-        N = max(self.config.world_dimensions[0] * self.config.world_dimensions[1] // 2, 10)
-        N = 6
-        k = max(min(N,5), N // 10)
-        print(f"Creating PRM graph with N={N} nodes and k={k} neighbors.")
-        self.aco_env = PRMGraph(self.env, N=N, k=k)
-        self.paths_for_agents = self.aco_env.run_aco()
-        self.set_agents_next_target()
+        if config.graph_type == "grid":
+            from aco_algorithm.graphs.gridGraph import GridGraph
+            self.aco_env = GridGraph(self.env, self.config)
+            
+        elif config.graph_type == "PRM":
+            from aco_algorithm.graphs.PRMGraph import PRMGraph
+            # # TODO: add parameters N and k in config file
+            # dims = self.env.get_dimensions()
+            # N = max(dims[0] * dims[1] // 2, 10)
+            # k = max(min(N,5), N // 10)
+            self.aco_env = PRMGraph(self.env, self.config)
+            
+        else:
+            raise ValueError("Graph type " + str(config.graph_type) + " not recognized.")
         
+        self.aco_env.initialize_aco_parameters(
+            num_ants=self.config.num_ants,
+            num_iterations=self.config.num_iterations,
+            alpha=self.config.alpha,
+            beta=self.config.beta,
+            evaporation_rate=self.config.evaporation_rate
+        )
+        self.aco_env.run_aco()
+        
+        # self.set_agents_next_target()
+        self.set_agents_first_target()
+        
+    # def update(self, dt):
+  
+    #     N = len(self.env.agents)
+        
+    #     snapshot = list(self.env.agents)
+    #     for agent in self.env.agents:
+    #         # if agent.path is None:
+    #         #     # TODO: handle this case better
+    #         #     self.env.agents.remove(agent)
+    #         #     continue
+    #         prev_pos = agent.pos.copy()
+    #         agent.update(snapshot, self.env, dt)
+            
+    #         # check if target place is reached
+            
+    #         if len(agent.path) == 1: # if needed to avoid computing check_something_reached() at every iteration
+    #             if self.env.check_something_reached((prev_pos[0], prev_pos[1]), (agent.pos[0], agent.pos[1]), "exit") is not None:
+    #                 agent.node_reached()
+    #         elif np.linalg.norm(agent.pos - agent.target) < 1.0:
+    #             agent.node_reached()
+            
+    #         if agent.safe:
+    #             self.agents_escaped.append(agent.id)
+    #             self.env.agents.remove(agent)
+                
+    #     self.env.simulation_time += dt
+
+    #     return
+    
     def update(self, dt):
   
         N = len(self.env.agents)
         
         snapshot = list(self.env.agents)
         for agent in self.env.agents:
-            if agent.path is None:
-                # TODO: handle this case better
-                self.env.agents.remove(agent)
+            
+            if agent.fail:
                 continue
+            
             prev_pos = agent.pos.copy()
             agent.update(snapshot, self.env, dt)
-            
-            # check if target place is reached
-            if np.linalg.norm(agent.pos - agent.target) < 1:
-                agent.node_reached()
-            
-            if agent.safe:
+                        
+            extra = 0.1 * agent.vel / np.linalg.norm(agent.vel) # this extra is added because otherwise agents tend to stop on the exit due to the social-force model
+            if self.env.check_something_reached(prev_pos, (agent.pos[0] + extra[0], agent.pos[1] + extra[1]), "exit") is not None:
                 self.agents_escaped.append(agent.id)
                 self.env.agents.remove(agent)
                 
+            #if agent.target_id in self.aco_env.exit_nodes:
+            elif agent.target_id in self.aco_env.exit_nodes:
+                continue
+            
+            elif self.env.check_something_reached(agent.pos, agent.target, "wall") is not None:
+                self.change_target(agent)
+                    
+            # check if target place is reached
+            elif np.linalg.norm(agent.pos - agent.target) < 1.0:
+                agent.node_visited.add(agent.target_id)
+                self.compute_next_target(agent)
+         
         self.env.simulation_time += dt
 
         return
@@ -84,12 +137,53 @@ class CrowdSimulator():
 
         return
     
-    def set_agents_next_target(self):
+    def set_agents_first_target(self):
+        # n_nodes = len(self.aco_env.nodes)
         for agent in self.env.agents:
-            if agent.path is not None:
-                agent.target = agent.path[0]
-                print(f"Agent {agent.id} target set to {agent.target}.")
-        return
+            self.change_target(agent)
+    
+    def change_target(self, agent):
+        sorted_node_ids = sorted(
+            self.aco_env.nodes_id_set,
+            key=lambda node_id: np.linalg.norm(
+                np.array(self.aco_env.nodes[node_id].pos) - np.array(agent.pos)
+            )
+        )
+        
+        start_node_id = None
+        while len(sorted_node_ids) > 0:
+            start_node_id = sorted_node_ids.pop(0)
+            if self.env.check_something_reached((agent.pos[0], agent.pos[1]), (self.aco_env.nodes[start_node_id].pos[0], self.aco_env.nodes[start_node_id].pos[1]), "wall") is None:
+                break
+        if start_node_id is None:
+            agent.fail = True
+            print("No valid start node found for agent " + str(agent.id))
+        
+        agent.target_id = start_node_id
+        agent.target = self.aco_env.nodes[start_node_id].pos
+        
+    def compute_next_target(self, agent):
+                
+        max = -1
+        idx = -1
+        
+        for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
+            if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
+                max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
+                idx = neighbor_id
+        # max = np.argmax(self.pheromones[agent.target_id])
+        # if idx != agent.target_id:
+        #     agent.target_id = idx
+        # else:
+        #     new_target_node_id = np.random.choice(list(self.aco_env.nodes[agent.target_id].edges.keys()))
+        #     agent.target_id = new_target_node_id
+        #     print(new_target_node_id)
+        if idx < 0:
+            self.change_target(agent)
+            #print("Agent " + str(agent.id) + " has visited all the neighboring nodes of node " + str(agent.target_id) + ", choosing a new target.")
+        else:
+            agent.target_id = idx
+            agent.target = self.aco_env.nodes[agent.target_id].pos
     
     def avoid_agents(self, agent1, agent2, dt):
         # !! In teoria future_pos non dovrebbe servire, controllare e nel caso eliminare !!

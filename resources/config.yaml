@@ -1,7 +1,7 @@
 algorithm: 
-  name: aco #[options: boids-without-panic, pso-local, aco]
-  time-step: 0.05
-  seed: 2
+  name: boids #[options: boids, pso-local, aco]
+  time-step: 0.01
+  seed: 5
 
 algorithm-parameters:
 
@@ -14,9 +14,9 @@ algorithm-parameters:
       cohesion: 0.5
     agents:
       size: 5.0             # is this for plotting?
-      max-speed: 4.0
+      max-speed: 10.0
       max-force: 0.3
-      vision-radius: 7.0   # 80.0
+      vision-radius: 80.0   # 80.0
       min-separation: 15.0  # 3 * agent_size # what is this?
       wall-avoid-distance: 10.0
 
@@ -27,15 +27,28 @@ algorithm-parameters:
     social_weight: 1.8
 
   aco:
-    # TODO: add ACO parameters
+    num-ants-in-simulation: 250
+    num-iterations: 1
+    alpha: 1.0
+    beta: 2.0
+    evaporation-rate: 0.2
+
+    # Graph parameters
+    graph-type: grid   # options: ["grid", "PRM"]
+    n: 20             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
+    m: 10             # used only if graph-type is "grid", number of columns
+    k-connectivity: 2 # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
 
 # TODO : get agents parameter shared among algorihtms here
 
 world:
-  type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: empty          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
+
+  # following parameters are considered only if "type: custom"
   dimensions: [10,10]
-  num-agents: 1
+  num-agents: 50
+  # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]
   walls:

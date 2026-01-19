@@ -29,6 +29,7 @@ class Visualizer:
         
         self.hasGraph = False
         self.nodes = None
+        self.aco_env = None
         
         self.show_grid = True # TODO: read from config file
         
@@ -46,11 +47,14 @@ class Visualizer:
         # Add functions to show "moving" things on screen
         self.draw_environment()
         
-        if self.show_grid:
-            self.draw_grid()
+        # if self.show_grid:
+        #     self.draw_grid()
         
-        if self.hasGraph:
-            self.draw_graph()
+        # if self.hasGraph:
+        #     # self.draw_graph()
+            
+        #     if self.aco_env.pheromone is not None:
+        #         self.draw_acoPheromone_heatmap()
             
         self.draw_agents()
         self.add_env_description()
@@ -133,6 +137,72 @@ class Visualizer:
 
         
         
+    # def draw_agents(self):
+    #     agents = self.environment.get_agents()
+    #     if agents is None:
+    #         return
+        
+    #     for agent in agents:
+    #         a_pos = agent.get_position()
+    #         a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
+            
+    #         draw_circle(
+    #             int(a_pos_screen[0]), 
+    #             int(a_pos_screen[1]), 
+    #             agent.radius * self.scale_env,  # radius scaled to environment size
+    #             [250, 250, 250, 35]
+    #         )
+            
+    #         # if agent.path is not None:
+    #         #     color = self.agents_color
+    #         # else:
+    #         #     color = RED
+    #         color = self.agents_color
+    #         draw_circle(
+    #             int(a_pos_screen[0]), 
+    #             int(a_pos_screen[1]), 
+    #             2,  # radius scaled to environment size
+    #             color
+    #         )
+            
+    #         scale = 5
+            
+    #         velocity_screen = agent.vel * self.scale_env // scale
+    #         draw_line(
+    #             int(a_pos_screen[0]), 
+    #             int(a_pos_screen[1]),
+    #             int(a_pos_screen[0] + velocity_screen[0]),
+    #             int(a_pos_screen[1] + velocity_screen[1]),
+    #             color
+    #         )
+            
+    #         # force_driving_screen = agent.f_desired * self.scale_env // scale
+    #         # draw_line(
+    #         #     int(a_pos_screen[0]), 
+    #         #     int(a_pos_screen[1]),
+    #         #     int(a_pos_screen[0] + force_driving_screen[0]),
+    #         #     int(a_pos_screen[1] + force_driving_screen[1]),
+    #         #     RED
+    #         # )
+            
+    #         # force_agent_screen = agent.f_agents * self.scale_env // scale
+    #         # draw_line(
+    #         #     int(a_pos_screen[0]), 
+    #         #     int(a_pos_screen[1]),
+    #         #     int(a_pos_screen[0] + force_agent_screen[0]),
+    #         #     int(a_pos_screen[1] + force_agent_screen[1]),
+    #         #     ORANGE
+    #         # )
+            
+    #         # force_wall_screen = agent.f_walls * self.scale_env // scale
+    #         # draw_line(
+    #         #     int(a_pos_screen[0]), 
+    #         #     int(a_pos_screen[1]),
+    #         #     int(a_pos_screen[0] + force_wall_screen[0]),
+    #         #     int(a_pos_screen[1] + force_wall_screen[1]),
+    #         #     BLUE
+    #         # )
+    
     def draw_agents(self):
         agents = self.environment.get_agents()
         if agents is None:
@@ -141,27 +211,26 @@ class Visualizer:
         for agent in agents:
             a_pos = agent.get_position()
             a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
+            color = agent.color
+            
+            if agent.fail:
+                color = RED
             
             draw_circle(
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
                 agent.radius * self.scale_env,  # radius scaled to environment size
-                [250, 250, 250, 20]
+                [color[0], color[1], color[2], 100]
             )
             
-            # if agent.path is not None:
-            #     color = self.agents_color
-            # else:
-            #     color = RED
-            color = self.agents_color
             draw_circle(
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
-                2,  # radius scaled to environment size
-                color
+                2,  
+                [color[0], color[1], color[2], 255]
             )
             
-            scale = 10
+            scale = 5
             
             velocity_screen = agent.vel * self.scale_env // scale
             draw_line(
@@ -169,35 +238,18 @@ class Visualizer:
                 int(a_pos_screen[1]),
                 int(a_pos_screen[0] + velocity_screen[0]),
                 int(a_pos_screen[1] + velocity_screen[1]),
-                color
+                [color[0], color[1], color[2], 255]
             )
             
-            force_driving_screen = agent.f_desired * self.scale_env // scale
-            draw_line(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]),
-                int(a_pos_screen[0] + force_driving_screen[0]),
-                int(a_pos_screen[1] + force_driving_screen[1]),
-                RED
-            )
-            
-            force_agent_screen = agent.f_agents * self.scale_env // scale
-            draw_line(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]),
-                int(a_pos_screen[0] + force_agent_screen[0]),
-                int(a_pos_screen[1] + force_agent_screen[1]),
-                ORANGE
-            )
-            
-            force_wall_screen = agent.f_walls * self.scale_env // scale
-            draw_line(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]),
-                int(a_pos_screen[0] + force_wall_screen[0]),
-                int(a_pos_screen[1] + force_wall_screen[1]),
-                BLUE
-            )
+            # target_pos = agent.target
+            # if target_pos is not None:
+            #     target_pos_screen = self.env_to_screen((target_pos[0], target_pos[1]))
+            #     draw_circle(
+            #         int(target_pos_screen[0]),
+            #         int(target_pos_screen[1]),
+            #         4,
+            #         [color[0], color[1], color[2], 255]
+            #     )
             
         
     def add_title(self):
@@ -281,12 +333,14 @@ class Visualizer:
         close_window()
         self.on = False
         
-    def associate_graph(self, nodes):
+    def associate_graph(self, aco_env):
         self.hasGraph = True
-        self.nodes = nodes
+        self.aco_env = aco_env
+        self.nodes = aco_env.nodes
         
     def remove_graph(self):
         self.hasGraph = False
+        self.aco_env = None
         self.nodes = None
         
     def disable_graph(self):
@@ -329,13 +383,15 @@ class Visualizer:
             print("No graph nodes to draw.")
             return
         
-        for node in self.nodes:
+        nodes_list = list(self.nodes.values())
+            
+        for node in nodes_list:
             node_screen = self.env_to_screen(node.pos)
             draw_circle(
                 int(node_screen[0]),
                 int(node_screen[1]),
-                2,
-                [255, 105, 180, 50]
+                5,
+                [255, 105, 180, 100]
             )
             for neighbor_id in node.edges.keys():
                 neighbor_pos = self.nodes[neighbor_id].pos
@@ -347,3 +403,74 @@ class Visualizer:
                     int(neighbor_screen[1]),
                     [255, 105, 180, 50]
                 )
+                
+    def draw_acoPheromone_heatmap(self):
+        if self.nodes is None:
+            print("No graph nodes to draw.")
+            return
+        
+        
+        # let's cut out the lower pheromone levels to improve visualization
+        max_pheromone = max(self.aco_env.pheromone.values())
+        min_pheromone = min(self.aco_env.pheromone.values())
+        # threshold = min_pheromone + 0.1 * (max_pheromone - min_pheromone)
+        # pheromone_visualizer = {k: v for k, v in self.aco_env.pheromone.items() if v >= threshold}
+        # min_pheromone = threshold
+        
+        pheromone_visualizer = self.aco_env.pheromone
+        
+        pheromone_range = max_pheromone - min_pheromone if max_pheromone != min_pheromone else 1.0
+            
+        for edge_key, pheromone_level in pheromone_visualizer.items():
+            node_ids = list(edge_key)
+            node1 = self.nodes[node_ids[0]]
+            node2 = self.nodes[node_ids[1]]
+            node1_screen = self.env_to_screen(node1.pos)
+            node2_screen = self.env_to_screen(node2.pos)
+            
+            # Normalize pheromone level to [0, 1]
+            normalized_level = (pheromone_level - min_pheromone) / pheromone_range
+            
+            # Map to color (e.g., from blue to red)
+            r = int(255 * normalized_level)
+            g = 0
+            b = int(255 * (1 - normalized_level))
+            color = self.colormap(normalized_level)
+            
+            draw_line(
+                int(node1_screen[0]),
+                int(node1_screen[1]),
+                int(node2_screen[0]),
+                int(node2_screen[1]),
+                color
+            )
+        
+    def colormap(self, t):
+        t = max(0.0, min(1.0, t))
+
+        if t < 0.25:
+            # blue → cyan
+            u = t / 0.25
+            r = 0
+            g = int(255 * u)
+            b = 255
+        elif t < 0.5:
+            # cyan → green
+            u = (t - 0.25) / 0.25
+            r = 0
+            g = 255
+            b = int(255 * (1 - u))
+        elif t < 0.75:
+            # green → yellow
+            u = (t - 0.5) / 0.25
+            r = int(255 * u)
+            g = 255
+            b = 0
+        else:
+            # yellow → red
+            u = (t - 0.75) / 0.25
+            r = 255
+            g = int(255 * (1 - u))
+            b = 0
+
+        return [r, g, b, 220]

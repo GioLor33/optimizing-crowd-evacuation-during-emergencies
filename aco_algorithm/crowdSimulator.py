@@ -8,10 +8,6 @@ class CrowdSimulator():
         self.config = config
         
         self.env = environment_input
-        num_agents = self.config.num_agents
-        #self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
-        for i in range(num_agents):
-            self.env.add_agent(AcoAgent(self.env, uid=i))
         self.agents_escaped = []
         
         if config.graph_type == "grid":
@@ -184,7 +180,7 @@ class CrowdSimulator():
         #     print(new_target_node_id)
         if idx < 0:
             self.change_target(agent)
-            print("Agent " + str(agent.id) + " has visited all the neighboring nodes of node " + str(agent.target_id) + ", choosing a new target.")
+            #print("Agent " + str(agent.id) + " has visited all the neighboring nodes of node " + str(agent.target_id) + ", choosing a new target.")
         else:
             agent.target_id = idx
             agent.target = self.aco_env.nodes[agent.target_id].pos

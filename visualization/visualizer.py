@@ -47,14 +47,14 @@ class Visualizer:
         # Add functions to show "moving" things on screen
         self.draw_environment()
         
-        if self.show_grid:
-            self.draw_grid()
+        # if self.show_grid:
+        #     self.draw_grid()
         
-        if self.hasGraph:
-            # self.draw_graph()
+        # if self.hasGraph:
+        #     # self.draw_graph()
             
-            if self.aco_env.pheromone is not None:
-                self.draw_acoPheromone_heatmap()
+        #     if self.aco_env.pheromone is not None:
+        #         self.draw_acoPheromone_heatmap()
             
         self.draw_agents()
         self.add_env_description()
@@ -220,7 +220,7 @@ class Visualizer:
                 int(a_pos_screen[0]), 
                 int(a_pos_screen[1]), 
                 agent.radius * self.scale_env,  # radius scaled to environment size
-                [color[0], color[1], color[2], 35]
+                [color[0], color[1], color[2], 100]
             )
             
             draw_circle(
@@ -241,15 +241,15 @@ class Visualizer:
                 [color[0], color[1], color[2], 255]
             )
             
-            target_pos = agent.target
-            if target_pos is not None:
-                target_pos_screen = self.env_to_screen((target_pos[0], target_pos[1]))
-                draw_circle(
-                    int(target_pos_screen[0]),
-                    int(target_pos_screen[1]),
-                    4,
-                    [color[0], color[1], color[2], 255]
-                )
+            # target_pos = agent.target
+            # if target_pos is not None:
+            #     target_pos_screen = self.env_to_screen((target_pos[0], target_pos[1]))
+            #     draw_circle(
+            #         int(target_pos_screen[0]),
+            #         int(target_pos_screen[1]),
+            #         4,
+            #         [color[0], color[1], color[2], 255]
+            #     )
             
         
     def add_title(self):
@@ -337,7 +337,6 @@ class Visualizer:
         self.hasGraph = True
         self.aco_env = aco_env
         self.nodes = aco_env.nodes
-        print(f"Visualizer associated with graph with {len(self.nodes)} nodes.")
         
     def remove_graph(self):
         self.hasGraph = False

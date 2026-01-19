@@ -6,6 +6,10 @@ from environments.environment import Environment
 from parser.config import Config
 from environments.scenarios import get_scenario_by_name
 
+config = Config("resources/config.yaml")
+if config.visualization:
+    from visualization.visualizer import Visualizer
+
 async def visualization_loop(visualizer):
     assert isinstance(visualizer, Visualizer)
     while visualizer.window_is_open() and visualizer.on:
@@ -40,7 +44,8 @@ async def main_program(world, config, visualizer=None):
         raise ValueError("Algorithm " + str(config.algorithm) + " not recognized.")
         exit(1)
     
-    while world.simulation_time < config.num_agents:  # Main executions
+    print("Algorithm finished. Simulation started")
+    while world.simulation_time < 30:  # Main executions
         start = time.time()
         world.simulation_start_time = start
         sim.update(dt)
@@ -67,23 +72,22 @@ async def initialize_main(config : Config):
     if seed is not None:
         np.random.seed(seed)
     
+    print("Creating the environment and adding the agents...")
     if config.world_type == "custom":
         env = Environment(
             name=config.world_name,
             dimensions=config.world_dimensions,
             exits=config.exits,
-            walls=config.walls
+            walls=config.walls,
+            agents=[config.num_agents, config.algorithm]
             #agents_spawn_method=config.spawn_agent_method
         )
     else:
-        env = get_scenario_by_name(config.world_type)
+        env = get_scenario_by_name(config.world_type, agents = [config.num_agents, config.algorithm])
         if env is None:
             raise ValueError("Scenario " + str(config.world_type) + " not recognized.")
         
-    # TODO: we should add the agents in the environment here based on the algorithm simulation we want to perform
-
     if config.visualization:
-        from visualization.visualizer import Visualizer
         visualizer = Visualizer(environment=env, config=config)
 
         await asyncio.gather(
@@ -97,6 +101,5 @@ async def initialize_main(config : Config):
     return results
 
 if __name__ == "__main__":
-    config = Config("resources/config.yaml")
     asyncio.run(initialize_main(config))
     

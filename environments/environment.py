@@ -1,8 +1,10 @@
 from environments.utils import segments_intersect
+from parser.config import Config
 import numpy as np
+import copy
 
 class Environment:
-    def __init__(self, name, dimensions=(10,10), walls=[None], exits=[None]):
+    def __init__(self, name, dimensions=(10,10), walls=[None], exits=[None], agents = None):
         self.name = name
         
         assert dimensions is not None, "Dimensions must be provided"
@@ -21,6 +23,24 @@ class Environment:
         self.agents = []
         self.initial_agent_count = 0
         self.simulation_time = 0.0
+        
+        #self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
+        if isinstance(agents, list) and len(agents) == 2:
+            num_agents, agent_class = agents
+            for i in range(num_agents):
+                if agent_class == "aco":
+                    from aco_algorithm.acoAgent import AcoAgent
+                    self.add_agent(AcoAgent(self, uid=i))
+                elif agent_class == "boids-without-panic":
+                    from boids_algorithm.boidsAgent import BoidsAgent
+                    self.add_agent(BoidsAgent(self, uid=i))
+                elif agent_class == "pso-local":
+                    from pso_algorithm.psoAgent import PsoAgent
+                    self.add_agent(PsoAgent(self.env, uid=i))
+                else:
+                    raise ValueError("Algorithm " + str(agent_class) + " not recognized.")
+        elif agents is not None:
+            raise ValueError("Agents must be provided as a list [num_agents, agent_class] or None")
         
     def add_agent(self, agent):
         self.agents.append(agent)
@@ -232,4 +252,39 @@ class Environment:
             (A[1] + B[1]) / 2
         )
         return point
+    
+    #############################################à
+    
+    def __deepcopy__(self, memo):
+        # Prevent infinite recursion
+        if id(self) in memo:
+            return memo[id(self)]
+
+        # Create a new Environment WITHOUT agents first
+        new_env = Environment(
+            name=self.name,
+            dimensions=self.__dimensions,
+            walls=[],     # will be copied manually
+            exits=[],     # will be copied manually
+            agents=None   # do NOT re-run agent creation logic
+        )
+
+        memo[id(self)] = new_env
+
+        # Copy simple attributes
+        new_env.simulation_time = self.simulation_time
+        new_env.initial_agent_count = self.initial_agent_count
+
+        # Deep copy walls & exits (tuples are immutable, but list is not)
+        new_env.walls = copy.deepcopy(self.walls, memo)
+        new_env.exits = copy.deepcopy(self.exits, memo)
+
+        # Deep copy agents and rebind them to the new environment
+        new_env.agents = []
+        for agent in self.agents:
+            new_agent = copy.deepcopy(agent, memo)
+            new_agent.env = new_env
+            new_env.agents.append(new_agent)
+
+        return new_env
         

@@ -1,7 +1,7 @@
 algorithm: 
   name: aco #[options: boids-without-panic, pso-local, aco]
   time-step: 0.01
-  seed: 2
+  seed: 5
 
 algorithm-parameters:
 
@@ -42,12 +42,12 @@ algorithm-parameters:
 # TODO : get agents parameter shared among algorihtms here
 
 world:
-  type: slalom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: two_doors          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
 
   # following parameters are considered only if "type: custom"
   dimensions: [10,10]
-  num-agents: 50
+  num-agents: 90
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]
@@ -55,7 +55,7 @@ world:
     #- [[5, 0], [5, 7]]
 
 visualization:
-  activate: true
+  activate: false
   dimensions: [1200, 800]
   window-name: "Crowd Simulation"
 

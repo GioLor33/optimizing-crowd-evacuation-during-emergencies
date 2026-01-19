@@ -1,5 +1,5 @@
 algorithm: 
-  name: aco #[options: boids-without-panic, pso-local, aco]
+  name: aco #[options: boids, pso-local, aco]
   time-step: 0.01
   seed: 5
 
@@ -55,7 +55,7 @@ world:
     #- [[5, 0], [5, 7]]
 
 visualization:
-  activate: false
+  activate: true
   dimensions: [1200, 800]
   window-name: "Crowd Simulation"
 

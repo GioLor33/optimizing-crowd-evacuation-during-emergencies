@@ -31,7 +31,7 @@ class Environment:
                 if agent_class == "aco":
                     from aco_algorithm.acoAgent import AcoAgent
                     self.add_agent(AcoAgent(self, uid=i))
-                elif agent_class == "boids-without-panic":
+                elif agent_class == "boids":
                     from boids_algorithm.boidsAgent import BoidsAgent
                     self.add_agent(BoidsAgent(self, uid=i))
                 elif agent_class == "pso-local":

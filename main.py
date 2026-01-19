@@ -24,7 +24,7 @@ async def main_program(world, config, visualizer=None):
     num_agents = config.num_agents 
     dt = config.dt
     
-    if config.algorithm == "boids-without-panic":
+    if config.algorithm == "boids":
         from boids_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
         print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")

@@ -21,7 +21,6 @@ class Agent:
         self.f_walls = np.zeros(2)
         self.f_agents = np.zeros(2)
         
-        # TODO: REMOVE
         self.color = (
             np.random.randint(50, 255),
             np.random.randint(50, 255),

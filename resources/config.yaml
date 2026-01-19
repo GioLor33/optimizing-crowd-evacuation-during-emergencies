@@ -1,5 +1,5 @@
 algorithm: 
-  name: aco #[options: boids, pso-local, aco]
+  name: boids #[options: boids, pso-local, aco]
   time-step: 0.01
   seed: 5
 
@@ -42,12 +42,12 @@ algorithm-parameters:
 # TODO : get agents parameter shared among algorihtms here
 
 world:
-  type: two_doors          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: empty          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
 
   # following parameters are considered only if "type: custom"
   dimensions: [10,10]
-  num-agents: 90
+  num-agents: 50
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]

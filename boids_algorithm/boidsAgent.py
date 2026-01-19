@@ -4,22 +4,14 @@ from environments.agent import Agent
 
 
 class BoidsAgent(Agent):
-    def __init__(self, environment, config, start_pos=None):
-        super().__init__(environment, id(self))
-        start = start_pos if start_pos is not None else self.env.get_random_spawn()
-        self.sfm_A = 10.0
-        self.sfm_B = 0.8
-        self.sfm_k = 500.0
-        self.sfm_kappa = 1000.0
-        self.mass = 80.0
-        self.pos = np.array(start, dtype=float)
+    def __init__(self, environment, uid, config, start_pos=None):
+        super().__init__(environment, uid)
         self.prev_pos = self.pos.copy()
-        self.vel = np.random.uniform(-1, 1, 2)
+        
         self.acc = np.zeros(2)
-        self.radius = getattr(config, 'agent_radius', 0.3)
+        
         self.base_speed = getattr(config, 'max_speed', 2.0)
-        self.mass = getattr(config, 'mass', 1.0)
-        self.tau = getattr(config, 'tau', 0.5)
+
         self.vision_radius = getattr(config, 'vision_radius', 10.0)
         self.min_separation = getattr(config, 'min_separation', 1.0)
         self.exits = [(np.array(p1), np.array(p2)) for p1, p2 in self.env.get_safety_exits()]

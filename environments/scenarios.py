@@ -1,9 +1,10 @@
 # FILE: environments/scenarios.py
 import numpy as np
 from environments.environment import Environment
+from parser.config import Config
 
 class BottleneckEnvironment(Environment):
-    def __init__(self, agents = None):
+    def __init__(self, agents = None, config : Config = None):
         width = 10
         height = 10
         walls = [
@@ -13,7 +14,7 @@ class BottleneckEnvironment(Environment):
         exits = [
             [(10, 4), (10, 6)]
         ]
-        super().__init__("Bottleneck_Scenario", (width, height), walls, exits, agents)
+        super().__init__("Bottleneck_Scenario", (width, height), walls, exits, agents, config)
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -36,7 +37,7 @@ class BottleneckEnvironment(Environment):
 
 
 class CenterSpawnTwoDoorsEnvironment(Environment):
-    def __init__(self, agents = None):
+    def __init__(self, agents = None, config : Config = None):
         self.width = 10
         self.height = 10
 
@@ -50,7 +51,7 @@ class CenterSpawnTwoDoorsEnvironment(Environment):
             [(self.width, 2), (self.width, 4)]  # Right Exit
         ]
 
-        super().__init__("Two_Doors_Scenario", (self.width, self.height), walls, exits, agents)
+        super().__init__("Two_Doors_Scenario", (self.width, self.height), walls, exits, agents, config)
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -87,7 +88,7 @@ class SlalomEnvironment(Environment):
     - Spawn: Bottom Left (forces Up -> Down -> Center movement).
     """
 
-    def __init__(self, agents = None):
+    def __init__(self, agents = None, config : Config = None):
         width = 10
         height = 10
 
@@ -101,7 +102,7 @@ class SlalomEnvironment(Environment):
             [(10, 4), (10, 6)]
         ]
 
-        super().__init__("Slalom_Scenario", (width, height), walls, exits, agents)
+        super().__init__("Slalom_Scenario", (width, height), walls, exits, agents, config)
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -139,7 +140,7 @@ class EmptyRoomEnvironment(Environment):
     - Exit: Centered on Right wall.
     """
 
-    def __init__(self, agents = None):
+    def __init__(self, agents = None, config : Config = None):
         self.width = 10
         self.height = 10
         walls = []  # No internal obstacles
@@ -151,7 +152,7 @@ class EmptyRoomEnvironment(Environment):
             [(self.width, mid_y - door_size / 2), (self.width, mid_y + door_size / 2)]
         ]
 
-        super().__init__("Empty_Room_Scenario", (self.width, self.height), walls, exits, agents)
+        super().__init__("Empty_Room_Scenario", (self.width, self.height), walls, exits, agents, config)
 
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
@@ -179,13 +180,13 @@ class EmptyRoomEnvironment(Environment):
         return positions
 
 
-def get_scenario_by_name(name, agents = None):
+def get_scenario_by_name(name, agents = None, config : Config = None):
     if name == "bottleneck":
-        return BottleneckEnvironment(agents)
+        return BottleneckEnvironment(agents, config)
     elif name == "two_doors":
-        return CenterSpawnTwoDoorsEnvironment(agents)
+        return CenterSpawnTwoDoorsEnvironment(agents, config)
     elif name == "slalom":
-        return SlalomEnvironment(agents)
+        return SlalomEnvironment(agents, config)
     elif name == "empty":
-        return EmptyRoomEnvironment(agents)
+        return EmptyRoomEnvironment(agents, config)
     return None

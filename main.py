@@ -83,11 +83,12 @@ async def initialize_main(config : Config):
             dimensions=config.world_dimensions,
             exits=config.exits,
             walls=config.walls,
-            agents=[config.num_agents, config.algorithm]
+            agents=[config.num_agents, config.algorithm], 
+            config = config
             #agents_spawn_method=config.spawn_agent_method
         )
     else:
-        env = get_scenario_by_name(config.world_type, agents = [config.num_agents, config.algorithm])
+        env = get_scenario_by_name(config.world_type, agents = [config.num_agents, config.algorithm], config = config)
         if env is None:
             raise ValueError("Scenario " + str(config.world_type) + " not recognized.")
         

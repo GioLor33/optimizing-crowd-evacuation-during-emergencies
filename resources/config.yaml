@@ -45,7 +45,7 @@ world:
   type: two_doors          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
 
-  # following parameters are considered only if "type: custom"
+  # the following parameters are considered only if "type: custom"
   dimensions: [10,10]
   num-agents: 50
   # spawn: random       # options: ["random", "densed"]

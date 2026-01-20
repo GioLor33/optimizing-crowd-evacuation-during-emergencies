@@ -19,9 +19,9 @@ class BottleneckEnvironment(Environment):
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
         cols = int(np.sqrt(num_agents)) + 1
-        start_x = 2
+        start_x = 1
         start_y = 2
-        spacing = 1.5
+        spacing = 0.5
 
         count = 0
         for i in range(cols * 2):
@@ -56,7 +56,7 @@ class CenterSpawnTwoDoorsEnvironment(Environment):
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
         side_len = int(np.sqrt(num_agents)) + 1
-        spacing = 1.5
+        spacing = 0.5
 
         grid_width = side_len * spacing
         grid_height = side_len * spacing
@@ -108,12 +108,12 @@ class SlalomEnvironment(Environment):
         positions = []
         # Create a rectangular grid of agents
         cols = int(np.sqrt(num_agents)) + 1
-        spacing = 1.5
+        spacing = 0.5
 
         # Start at Bottom-Left (x=2, y=48) and fill UPWARDS and RIGHT
         # This ensures they start behind the first wall's blocked section
-        start_x = 2
-        start_y = 48
+        start_x = 0.5
+        start_y = 3.5
 
         count = 0
         # We iterate enough times to cover the agents
@@ -157,13 +157,13 @@ class EmptyRoomEnvironment(Environment):
     def get_ordered_spawn_positions(self, num_agents):
         positions = []
         side_len = int(np.sqrt(num_agents)) + 1
-        spacing = 1.5
+        spacing = 0.5
 
         grid_height = side_len * spacing
 
         # Center the spawn block vertically
         start_x = 3
-        start_y = (self.height / 2) - (grid_height / 2)
+        start_y = 1
 
         count = 0
         for i in range(side_len):

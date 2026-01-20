@@ -24,7 +24,7 @@ async def main_program(world, config, visualizer=None):
     num_agents = config.num_agents 
     dt = config.dt
     
-    if config.algorithm == "boids":
+    if config.algorithm == "boids-without-panic":
         from boids_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
         print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
@@ -33,7 +33,7 @@ async def main_program(world, config, visualizer=None):
         sim = CrowdSimulator(world, config = config)
         
         if visualizer is not None:
-            visualizer.associate_graph(sim.aco_env)
+            visualizer.associate_graph(sim.aco_env.nodes)
             visualizer.enable_graph()
             
         # print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")
@@ -71,13 +71,12 @@ async def main_program(world, config, visualizer=None):
     # TODO: display "Simulation Complete" message on visualizer
         
         
-async def initialize_main(config : Config):
+async def initialize_main():
     
     seed = config.random_seed
     if seed is not None:
         np.random.seed(seed)
     
-    print("Creating the environment and adding the agents...")
     if config.world_type == "custom":
         env = Environment(
             name=config.world_name,
@@ -107,5 +106,5 @@ async def initialize_main(config : Config):
     return results
 
 if __name__ == "__main__":
-    asyncio.run(initialize_main(config))
+    asyncio.run(initialize_main())
     

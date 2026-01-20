@@ -69,7 +69,7 @@ tot = len(inertia_weight) * len(cognitive_weight) * len(social_weight)
 
 np.random.seed(s)
 
-env = get_scenario_by_name(env_type, agents = [agents, "pso-local"]) 
+env = get_scenario_by_name(env_type, agents = [agents, "pso"]) 
 if env is None:
     raise ValueError("Scenario " + str(environment_types) + " not recognized.")
 
@@ -87,7 +87,7 @@ for w in inertia_weight:                      # 3
                             
             # step 1: create config file associated to the parameters
             configVal = Config()
-            configVal.algorithm = "pso-local"
+            configVal.algorithm = "pso"
             configVal.world_type = env_type
             
             configVal.random_seed = s

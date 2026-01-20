@@ -17,7 +17,7 @@ class Config:
             self.parse_boids_algorithm_params()
         elif self.algorithm == 'aco':
             self.parse_aco_algorithm_params()
-        elif self.algorithm == 'pso-local':
+        elif self.algorithm == 'pso':
             self.parse_pso_algorithm_params()
         else:
             raise ValueError("Algorithm " + str(self.algorithm) + " not recognized.")
@@ -47,7 +47,6 @@ class Config:
         return self.config.get(key, default)
     
     def parse_color(self, value, default=None):
-        # TODO: consider raylib asks for colors in RGBA format. For now opacity is set to 255
         
         if isinstance(value, str):
             try:
@@ -92,7 +91,7 @@ class Config:
         self.k_connectivity = aco.get('k-connectivity')
         
     def parse_pso_algorithm_params(self):
-        pso_section = self.config.get('algorithm-parameters', {}).get('pso-local', {})
+        pso_section = self.config.get('algorithm-parameters', {}).get('pso', {})
         self.neighborhood_radius = pso_section.get('neighborhood_radius', 5.0)
         self.W = pso_section.get('inertia_weight', 0.5)
         self.C1 = pso_section.get('cognitive_weight', 1.5)

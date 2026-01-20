@@ -1,5 +1,5 @@
 algorithm: 
-  name: pso-local #[options: boids, pso-local, aco]
+  name: aco #[options: boids, pso, aco]
   time-step: 0.01
   seed: 1
 
@@ -17,10 +17,10 @@ algorithm-parameters:
       max-speed: 10.0
       max-force: 0.3
       vision-radius: 80.0   # 80.0
-      min-separation: 15.0  # 3 * agent_size # what is this?
+      min-separation: 15.0  # 3 * agent_size
       wall-avoid-distance: 10.0
 
-  pso-local:  # PSO parameters
+  pso:  # PSO parameters
     neighborhood_radius: 10.0
     inertia_weight: 0.4
     cognitive_weight: 1.0

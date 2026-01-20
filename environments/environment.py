@@ -35,16 +35,16 @@ class Environment:
             elif agent_class == 'boids':
                 from boids_algorithm.boidsAgent import BoidsAgent
                 self.algorithm = "boids"    
-            elif agent_class == 'pso-local':
+            elif agent_class == 'pso':
                 from pso_algorithm.psoAgent import LocalPSOAgent
-                self.algorithm = "pso-local"
+                self.algorithm = "pso"
 
             for i in range(num_agents):
                 if agent_class == "aco":
                     self.add_agent(AcoAgent(self, uid=i))     
                 elif agent_class == "boids":
                     self.add_agent(BoidsAgent(self, uid=i, config=config))
-                elif agent_class == "pso-local":
+                elif agent_class == "pso":
                     self.add_agent(LocalPSOAgent(self, uid=i))
                 else:
                     raise ValueError("Algorithm " + str(agent_class) + " not recognized.")

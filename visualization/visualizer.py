@@ -20,7 +20,7 @@ class Visualizer:
         
         self.padding = 35
         self.right_border = 170
-        self.left_border = 170
+        self.left_border = 220
         self.bottom_border = 0
         self.top_border = 20
 
@@ -40,7 +40,7 @@ class Visualizer:
         self.btn_showGraph_pos = None
         self.show_graph = True
         
-        self.show_grid = True
+        self.show_grid = False
         self.btn_showGrid_pos = None
         
         self.show_pheromone_track = False
@@ -75,8 +75,8 @@ class Visualizer:
         self.draw_environment()
 
         # Show buttons
-        self.display_buttons()
         self.simulation_control_panel()
+        self.display_buttons()
         
         if self.show_grid:
             self.draw_grid()
@@ -274,7 +274,7 @@ class Visualizer:
         desc_x = self.padding - 20
         desc_y = self.top_border + 150
         
-        draw_text(f"Seed: {self.config.random_seed}", desc_x, desc_y, 20, self.text_color)
+        draw_text(f"# Seed: {self.config.random_seed}", desc_x, desc_y, 20, self.text_color)
         desc_y += 60
         
         draw_text("Environment Details:", desc_x, desc_y, 20, self.text_color)
@@ -308,11 +308,17 @@ class Visualizer:
             draw_text(f"> Beta: {self.config.beta}", desc_x, desc_y + 130, 20, self.text_color)
             draw_text(f"> Evaporation rate: {self.config.evaporation_rate}", desc_x, desc_y + 160, 20, self.text_color)
             draw_text(f"> Graph type: {self.config.graph_type} ({self.config.n}x{self.config.m})", desc_x, desc_y + 190, 20, self.text_color)
-        elif self.algorithm == "pso-local":
+        elif self.algorithm == "pso":
             draw_text(f"> Neighborhood radius: {self.config.neighborhood_radius}", desc_x, desc_y + 40, 20, self.text_color)
             draw_text(f"> Inertia weight: {self.config.W}", desc_x, desc_y + 70, 20, self.text_color)
             draw_text(f"> Cognitive weight: {self.config.C1}", desc_x, desc_y + 100, 20, self.text_color)
             draw_text(f"> Social weight: {self.config.C2}", desc_x, desc_y + 130, 20, self.text_color)
+        elif self.algorithm == "boids":
+            draw_text(f"> Separation weight: {self.config.W_SEPARATE}", desc_x, desc_y + 40, 20, self.text_color)
+            draw_text(f"> Alignment weight: {self.config.W_ALIGN}", desc_x, desc_y + 70, 20, self.text_color)
+            draw_text(f"> Cohesion weight: {self.config.W_COHERE}", desc_x, desc_y + 100, 20, self.text_color)
+            draw_text(f"> Seek weight: {self.config.W_SEEK}", desc_x, desc_y + 130, 20, self.text_color)
+            draw_text(f"> Avoid weight: {self.config.W_AVOID}", desc_x, desc_y + 160, 20, self.text_color)    
     
     def env_to_screen(self, env_position):
         starting_pos = (  # to center the environment in the window
@@ -403,7 +409,7 @@ class Visualizer:
     def simulation_control_panel(self):
         env_pos = self.env_to_screen((self.environment.get_width(), 0))
         lx_pos = self.padding + env_pos[0]
-        ly_pos = env_pos[1] + 520
+        ly_pos = env_pos[1] + 350
         btn_dim = 28
         text_dim = 20
         padding_in_between = 10
@@ -457,7 +463,7 @@ class Visualizer:
     def display_buttons(self):
         env_pos = self.env_to_screen((self.environment.get_width(), 0))
         lx_pos = self.padding + env_pos[0]
-        ly_pos = env_pos[1] + 350 #self.top_border + self.padding
+        ly_pos = env_pos[1] + 450 #self.top_border + self.padding
         btn_height = 40
         text_height = 15
         padding_in_between = 10

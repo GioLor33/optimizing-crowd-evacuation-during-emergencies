@@ -37,7 +37,7 @@ async def main_program(world, config, visualizer=None):
             visualizer.enable_graph()
             
         # print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")
-    elif config.algorithm == "pso-local":
+    elif config.algorithm == "pso":
         from pso_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
     else:

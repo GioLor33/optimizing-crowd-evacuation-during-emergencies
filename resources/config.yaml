@@ -1,7 +1,7 @@
 algorithm: 
-  name: aco #[options: boids, pso-local, aco]
+  name: pso-local #[options: boids, pso-local, aco]
   time-step: 0.01
-  seed: 5
+  seed: 1
 
 algorithm-parameters:
 
@@ -27,15 +27,15 @@ algorithm-parameters:
     social_weight: 1.5
 
   aco:
-    num-ants-in-simulation: 250
-    num-iterations: 1
-    alpha: 1.0
-    beta: 2.0
-    evaporation-rate: 0.2
+    num-ants-in-simulation: 105
+    num-iterations: 300
+    alpha: 1
+    beta: 2
+    evaporation-rate: 0.3
 
     # Graph parameters
     graph-type: grid   # options: ["grid", "PRM"]
-    n: 20             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
+    n: 10             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
     m: 10             # used only if graph-type is "grid", number of columns
     k-connectivity: 2 # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
 
@@ -56,14 +56,7 @@ world:
 
 visualization:
   activate: true
-  dimensions: [1200, 800]
   window-name: "Crowd Simulation"
-
-  padding: 50
-  right-border: 300
-  left-border: 300
-  top-border: 0
-  bottom-border: 120
    
   background-color: [0, 0, 0]
   agent-color: [243, 255, 20]

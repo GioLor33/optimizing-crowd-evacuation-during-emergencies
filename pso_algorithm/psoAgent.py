@@ -8,7 +8,7 @@ class LocalPSOAgent(Agent):
         super().__init__(env_instance, uid)
         self.pbest_position = self.pos.copy()
         self.pbest_time = float('inf')  
-        self.neighborhood_radius = config.NEIGHBORHOOD_RADIUS
+        self.neighborhood_radius = config.neighborhood_radius
         self.w = config.W
         self.c1 = config.C1
         self.c2 = config.C2

@@ -1,3 +1,4 @@
+from pydoc import text
 from pyray import *
 from raylib import rl
 from raylib import ffi
@@ -5,11 +6,8 @@ from environments.environment import Environment
 from parser.config import Config
 import math
 
-# TODO: add buttons to start/pause/stop simulation
-
 class Visualizer:
     def __init__(self, environment, config: Config):
-        init_window(config.visualization_dimensions[0], config.visualization_dimensions[1], config.window_name)
         
         self.play = True
         self.btn_play_pos = None
@@ -17,14 +15,14 @@ class Visualizer:
         self.restart = False
         
         self.on = True
-        self.width = config.visualization_dimensions[0]
-        self.height = config.visualization_dimensions[1]
+        self.width = 1200
+        self.height = 700
         
-        self.padding = config.padding
-        self.right_border = config.right_border
-        self.left_border = config.left_border
-        self.bottom_border = config.bottom_border
-        self.top_border = config.top_border
+        self.padding = 35
+        self.right_border = 170
+        self.left_border = 170
+        self.bottom_border = 0
+        self.top_border = 20
 
         self.background_color = config.background_color   
         self.exits_color = config.exit_color
@@ -34,6 +32,7 @@ class Visualizer:
         self.title_color = config.title_color
         
         self.algorithm = config.algorithm
+        self.config = config
         
         self.hasGraph = False
         self.nodes = None
@@ -44,8 +43,13 @@ class Visualizer:
         self.show_grid = True
         self.btn_showGrid_pos = None
         
+        self.show_pheromone_track = False
+        self.btn_showPheromoneTrack_pos = None
+        
         assert isinstance(environment, Environment)
         self.define_environment(environment)
+        
+        init_window(self.width, self.height, config.window_name)
         
     def create_drawing(self):
         
@@ -57,23 +61,22 @@ class Visualizer:
             if self.btn_showGraph_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_showGraph_pos):
                 self.show_graph = not self.show_graph
             if self.btn_play_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_play_pos):
-                self.play = True
-            if self.btn_pause_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_pause_pos):
-                self.play = False
+                self.play = not self.play
+            if self.btn_showPheromoneTrack_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_showPheromoneTrack_pos):
+                self.show_pheromone_track = not self.show_pheromone_track
             
         begin_drawing()
         
         clear_background(self.background_color)
         
-        self.add_title()
         self.add_legend()
         
         # Add functions to show "moving" things on screen
         self.draw_environment()
 
         # Show buttons
-        self.simulation_control_panel()
         self.display_buttons()
+        self.simulation_control_panel()
         
         if self.show_grid:
             self.draw_grid()
@@ -81,11 +84,14 @@ class Visualizer:
         if self.hasGraph and self.show_graph:
             self.draw_graph()
             
-            # if self.aco_env.pheromone is not None:
-            #     self.draw_acoPheromone_heatmap()
+        if self.hasGraph and self.show_pheromone_track:
+            self.draw_acoPheromone_heatmap()
             
         self.draw_agents()
         self.add_env_description()        
+        self.add_algorithm_info()
+        
+        self.add_title()
         
         end_drawing()
         
@@ -94,9 +100,10 @@ class Visualizer:
         
         x, y = self.environment.get_dimensions()
         self.scale_env = min( 
-                            (self.width - self.right_border - self.left_border) / x,
-                            (self.height - self.bottom_border - self.top_border) / y
+                            (self.width - self.right_border - self.left_border - self.padding * 2) / x,
+                            (self.height - self.bottom_border - self.top_border - self.padding * 2) / y
                             )
+        print()
         print("Environment scale in visualizer set to: " + str(self.scale_env))
         
     def draw_environment(self):        
@@ -212,11 +219,13 @@ class Visualizer:
             
         
     def add_title(self):
-        # the title is centered at the top of the window
         font_size = 27
-        draw_text("CROWD SIMULATION", self.padding, self.padding, font_size, WHITE)
+        draw_rectangle(self.padding - 5, self.padding - 5, 300, font_size + 15, [0, 0, 0, 255])
+        
+        draw_text("CROWD EVACUATION", self.padding, self.padding, font_size, WHITE)
         draw_text("during", self.padding, self.padding + font_size + 5, font_size, WHITE)
-        draw_text("EVACUATION", self.padding, self.padding + 2 * (font_size + 5), font_size, RED)
+        draw_text("EMERGENCY", self.padding, self.padding + 2 * (font_size + 5), font_size, RED)
+        
         
     def add_legend(self): 
         env_pos = self.env_to_screen((self.environment.get_width(), 0))
@@ -245,7 +254,7 @@ class Visualizer:
         y_after_first += 30
         
         if self.show_grid:
-            grid_color = [200, 200, 200, 50]
+            grid_color = [200, 200, 200, 100]
             # horizontal lines
             draw_line(lx_pos, ly_pos + y_after_first, lx_pos + length_symbol, ly_pos + y_after_first, grid_color)
             draw_line(lx_pos, ly_pos + y_after_first + 20, lx_pos + length_symbol, ly_pos + y_after_first + 20, grid_color)
@@ -259,22 +268,56 @@ class Visualizer:
             draw_line(lx_pos, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, [255, 105, 180, 100])
             draw_text("ACO Graph", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
             y_after_first += 30
+            
         
     def add_env_description(self):
-        desc_x = self.padding
-        desc_y = self.height - self.bottom_border + 20
-        desc_x = self.padding
-        desc_y = self.height - self.bottom_border + 20
+        desc_x = self.padding - 20
+        desc_y = self.top_border + 150
+        
+        draw_text(f"Seed: {self.config.random_seed}", desc_x, desc_y, 20, self.text_color)
+        desc_y += 60
         
         draw_text("Environment Details:", desc_x, desc_y, 20, self.text_color)
-        draw_text(f"> Number of safety exits: {len(self.environment.get_safety_exits())}", desc_x, desc_y + 40, 20, self.text_color)
-        draw_text(f"> Agents still in danger: {len(self.environment.get_agents())} / {self.environment.initial_agent_count}", desc_x, desc_y + 70, 20, self.text_color)
+        draw_text(f"> Type: {self.config.world_type}", desc_x, desc_y + 30, 20, self.text_color)
+        draw_text(f"> Safety exits: {len(self.environment.get_safety_exits())}", desc_x, desc_y + 60, 20, self.text_color)
+        
+        agents = len(self.environment.agents)
+        if agents > self.environment.initial_agent_count * 0.5:
+            color = RED
+        elif agents > self.environment.initial_agent_count * 0.2:
+            color = ORANGE
+        elif agents == 0.0:
+            color = GREEN
+        else: 
+            color = YELLOW
+        draw_text(f"> Still in danger:       / {self.environment.initial_agent_count}", desc_x, desc_y + 90, 20, self.text_color)
+        draw_text(f"{agents}", desc_x + 185, desc_y + 90 - 2, 24, color)
+        
 
+    def add_algorithm_info(self):
+        desc_x = self.padding - 20
+        desc_y = self.top_border + 150 + 90 + 60 * 2
+        
+        draw_text("Algorithm:", desc_x, desc_y, 20, self.text_color)
+        draw_text(f"{self.algorithm.upper()}", desc_x + 120, desc_y, 20, YELLOW)
+        
+        if self.algorithm == "aco":
+            draw_text(f"> Ants used: {self.config.num_ants}", desc_x, desc_y + 40, 20, self.text_color)
+            draw_text(f"> Iterations: {self.config.num_iterations}", desc_x, desc_y + 70, 20, self.text_color)
+            draw_text(f"> Alpha: {self.config.alpha}", desc_x, desc_y + 100, 20, self.text_color)
+            draw_text(f"> Beta: {self.config.beta}", desc_x, desc_y + 130, 20, self.text_color)
+            draw_text(f"> Evaporation rate: {self.config.evaporation_rate}", desc_x, desc_y + 160, 20, self.text_color)
+            draw_text(f"> Graph type: {self.config.graph_type} ({self.config.n}x{self.config.m})", desc_x, desc_y + 190, 20, self.text_color)
+        elif self.algorithm == "pso-local":
+            draw_text(f"> Neighborhood radius: {self.config.neighborhood_radius}", desc_x, desc_y + 40, 20, self.text_color)
+            draw_text(f"> Inertia weight: {self.config.W}", desc_x, desc_y + 70, 20, self.text_color)
+            draw_text(f"> Cognitive weight: {self.config.C1}", desc_x, desc_y + 100, 20, self.text_color)
+            draw_text(f"> Social weight: {self.config.C2}", desc_x, desc_y + 130, 20, self.text_color)
     
     def env_to_screen(self, env_position):
         starting_pos = (  # to center the environment in the window
-            self.left_border + (self.width - self.right_border - self.left_border - self.environment.get_width() * self.scale_env) / 2,
-            self.top_border + (self.height - self.bottom_border - self.top_border - self.environment.get_height() * self.scale_env) / 2 
+            self.left_border + self.padding + (self.width - self.right_border - self.left_border - self.environment.get_width() * self.scale_env - self.padding * 2) / 2,
+            self.top_border + self.padding + (self.height - self.bottom_border - self.top_border - self.environment.get_height() * self.scale_env - self.padding * 2) / 2 
         )
         screen_x = int(starting_pos[0] + env_position[0] * self.scale_env)
         screen_y = int(starting_pos[1] + env_position[1] * self.scale_env)
@@ -317,7 +360,7 @@ class Visualizer:
                 start_pos[1],
                 end_pos[0],
                 end_pos[1],
-                [200, 200, 200, 20]
+                [200, 200, 200, 40]
             )
         # horizontal lines
         for y in range(int(dim[1]) + 1):
@@ -328,7 +371,7 @@ class Visualizer:
                 start_pos[1],
                 end_pos[0],
                 end_pos[1],
-                [200, 200, 200, 20]
+                [200, 200, 200, 40]
             )
         
     def draw_graph(self):
@@ -360,56 +403,61 @@ class Visualizer:
     def simulation_control_panel(self):
         env_pos = self.env_to_screen((self.environment.get_width(), 0))
         lx_pos = self.padding + env_pos[0]
-        ly_pos = env_pos[1] + 300
-        btn_dim = 30
+        ly_pos = env_pos[1] + 520
+        btn_dim = 28
+        text_dim = 20
         padding_in_between = 10
         
-        draw_text("Simulation Controller:", lx_pos, ly_pos, 20, self.text_color)
+        draw_text("Simulation Controller:", lx_pos, ly_pos, text_dim, self.text_color)
         ly_pos += 40
         
-        draw_text(f"> Sim Time: {self.environment.simulation_time:.2f} s", lx_pos, ly_pos, 20, self.text_color)
-        ly_pos += 30
-        lx_pos_curr = lx_pos + 15
+        draw_text(f">", lx_pos, ly_pos, text_dim, self.text_color)
+        lx_pos_curr = lx_pos + 20
         
-        self.btn_play_pos = [lx_pos_curr, ly_pos, btn_dim, btn_dim]
-        rl.DrawRectangleLinesEx(self.btn_play_pos, 1, GREEN)
-        triangle_margin = 10  # padding inside button
-        x0 = lx_pos_curr + triangle_margin
-        y0 = ly_pos + triangle_margin
-        x1 = lx_pos_curr + triangle_margin
-        y1 = ly_pos + btn_dim - triangle_margin
-        x2 = lx_pos_curr + btn_dim - triangle_margin
-        y2 = ly_pos + btn_dim / 2
-        rl.DrawTriangle(
-            ffi.new("Vector2 *", [x0, y0])[0],
-            ffi.new("Vector2 *", [x1, y1])[0],
-            ffi.new("Vector2 *", [x2, y2])[0],
-            GREEN
-        )
-        lx_pos_curr += + btn_dim + padding_in_between
+        ly_pos_curr = ly_pos - (btn_dim - text_dim) // 2
+        self.btn_play_pos = [lx_pos_curr, ly_pos_curr, btn_dim, btn_dim]
+        if self.play:
+            self.btn_pause_pos = [lx_pos_curr, ly_pos_curr, btn_dim, btn_dim]
+            rl.DrawRectangleLinesEx(self.btn_play_pos, 1, RED)
+            bar_width = btn_dim * 0.15
+            bar_height = btn_dim * 0.6
+            spacing_between_bars = bar_width * 0.95
+            bar_margin = (btn_dim - (bar_width * 2 + spacing_between_bars)) / 2  # spacing between bars
+            x0 = lx_pos_curr + bar_margin
+            y0 = ly_pos_curr + (btn_dim - bar_height) / 2
+            rl.DrawRectangle(
+                int(x0), int(y0), int(bar_width), int(bar_height), RED
+            )
+            x1 = lx_pos_curr + bar_margin + bar_width + spacing_between_bars
+            y1 = y0
+            rl.DrawRectangle(
+                int(x1), int(y1), int(bar_width), int(bar_height), RED
+            )
+        else:
+            rl.DrawRectangleLinesEx(self.btn_play_pos, 1, GREEN)
+            triangle_margin = btn_dim * 0.25  # padding inside button
+            x0 = lx_pos_curr + triangle_margin
+            y0 = ly_pos_curr + triangle_margin
+            x1 = lx_pos_curr + triangle_margin
+            y1 = ly_pos_curr + btn_dim - triangle_margin
+            x2 = lx_pos_curr + btn_dim - triangle_margin
+            y2 = ly_pos_curr + btn_dim / 2
+            rl.DrawTriangle(
+                ffi.new("Vector2 *", [x0, y0])[0],
+                ffi.new("Vector2 *", [x1, y1])[0],
+                ffi.new("Vector2 *", [x2, y2])[0],
+                GREEN
+            )
+            
+        lx_pos_curr += + btn_dim + padding_in_between   
         
-        self.btn_pause_pos = [lx_pos_curr, ly_pos, btn_dim, btn_dim]
-        rl.DrawRectangleLinesEx(self.btn_pause_pos, 1, RED)
-        bar_width = btn_dim * 0.15
-        bar_height = btn_dim * 0.6
-        bar_margin = (btn_dim - 2 * bar_width) / 5  # spacing between bars
-        x0 = lx_pos_curr + bar_margin
-        y0 = ly_pos + (btn_dim - bar_height) / 2
-        rl.DrawRectangle(
-            int(bar_margin + x0), int(y0), int(bar_width), int(bar_height), RED
-        )
-        x1 = lx_pos_curr + 2 * bar_margin + bar_width
-        y1 = y0
-        rl.DrawRectangle(
-            int(bar_margin + x1), int(y1), int(bar_width), int(bar_height), RED
-        )
-        lx_pos_curr += btn_dim + padding_in_between
-        
+        draw_text(f"Sim Time: {self.environment.simulation_time:.2f} s", lx_pos_curr, ly_pos, text_dim, self.text_color)
+     
                 
     def display_buttons(self):
         env_pos = self.env_to_screen((self.environment.get_width(), 0))
         lx_pos = self.padding + env_pos[0]
-        ly_pos = env_pos[1] + 500 #self.top_border + self.padding
+        ly_pos = env_pos[1] + 350 #self.top_border + self.padding
         btn_height = 40
         text_height = 15
         padding_in_between = 10
@@ -428,7 +476,13 @@ class Visualizer:
             self.btn_showGraph_pos = [lx_pos_current, ly_pos, 105, btn_height]
             rl.DrawText(b'ACO Graph', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
             rl.DrawRectangleLinesEx(self.btn_showGraph_pos, 1, color)
-        
+            ly_pos += btn_height + padding_in_between
+            lx_pos_current = lx_pos
+            
+            color = WHITE if self.show_pheromone_track else GRAY
+            self.btn_showPheromoneTrack_pos = [lx_pos_current, ly_pos, 165, btn_height]
+            rl.DrawText(b'Pheromone Track', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
+            rl.DrawRectangleLinesEx(self.btn_showPheromoneTrack_pos, 1, color)
         
                 
     def draw_acoPheromone_heatmap(self):
@@ -436,19 +490,16 @@ class Visualizer:
             print("No graph nodes to draw.")
             return
         
-        
         # let's cut out the lower pheromone levels to improve visualization
         max_pheromone = max(self.aco_env.pheromone.values())
         min_pheromone = min(self.aco_env.pheromone.values())
-        # threshold = min_pheromone + 0.1 * (max_pheromone - min_pheromone)
-        # pheromone_visualizer = {k: v for k, v in self.aco_env.pheromone.items() if v >= threshold}
-        # min_pheromone = threshold
-        
-        pheromone_visualizer = self.aco_env.pheromone
-        
         pheromone_range = max_pheromone - min_pheromone if max_pheromone != min_pheromone else 1.0
+                
+        for edge_key, pheromone_level in self.aco_env.pheromone.items():
             
-        for edge_key, pheromone_level in pheromone_visualizer.items():
+            if pheromone_level <= 1.0:
+                continue
+            
             node_ids = list(edge_key)
             node1 = self.nodes[node_ids[0]]
             node2 = self.nodes[node_ids[1]]
@@ -458,18 +509,12 @@ class Visualizer:
             # Normalize pheromone level to [0, 1]
             normalized_level = (pheromone_level - min_pheromone) / pheromone_range
             
-            # Map to color (e.g., from blue to red)
-            r = int(255 * normalized_level)
-            g = 0
-            b = int(255 * (1 - normalized_level))
-            color = self.colormap(normalized_level)
-            
             draw_line(
                 int(node1_screen[0]),
                 int(node1_screen[1]),
                 int(node2_screen[0]),
                 int(node2_screen[1]),
-                color
+                self.colormap(normalized_level)
             )
         
     def colormap(self, t):
@@ -500,4 +545,4 @@ class Visualizer:
             g = int(255 * (1 - u))
             b = 0
 
-        return [r, g, b, 220]
+        return [r, g, b, 125]

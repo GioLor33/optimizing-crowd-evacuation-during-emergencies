@@ -168,8 +168,8 @@ class CrowdSimulator():
         idx = -1
         
         for neighbor_id in self.aco_env.nodes[agent.target_id].edges.keys():
-            if neighbor_id not in agent.node_visited and self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})] > max:
-                max = self.aco_env.pheromone[frozenset({agent.target_id, neighbor_id})]
+            if neighbor_id not in agent.node_visited and self.aco_env.pheromone[(agent.target_id, neighbor_id)] > max:
+                max = self.aco_env.pheromone[(agent.target_id, neighbor_id)]
                 idx = neighbor_id
         # max = np.argmax(self.pheromones[agent.target_id])
         # if idx != agent.target_id:

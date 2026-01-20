@@ -68,6 +68,8 @@ async def main_program(world, config, visualizer=None):
         await asyncio.sleep(0)
         
     #print("All agents have evacuated.")
+    if visualizer is not None:
+        visualizer.play = False
     return world.simulation_time, config.num_agents - len(sim.agents_escaped)
     
     # TODO: display "Simulation Complete" message on visualizer

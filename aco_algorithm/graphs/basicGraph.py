@@ -50,9 +50,9 @@ class BasicGraph():
         
     def run_aco(self):
         self.initialize_pheromones()
-        ants_pos = self.initialize_ants_positions() # here we place the ants in a random position on the graph in a uniform way
         
         for iteration in range(self.num_iterations):
+            ants_pos = self.initialize_ants_positions() # here we place the ants in a random position on the graph in a uniform way
             all_paths = []
             all_path_lengths = []
             
@@ -64,26 +64,29 @@ class BasicGraph():
                 path = [start_node_id]
                 visited_id = set(path)
                 
+                create_path = False
                 while True:
                     current_node_id = path[-1]
                     if current_node_id in self.exit_nodes: # reached an exit node
                         # here we should check if the exit corresponds to the agent's target
                         # otherwise we should penalize the visit of this node !! (we do not want the agent to go out from the wrong exit)
                         # print(f"> Agent {agent.id} reached exit node {current_node_id} during simulation {iteration}.")
+                        create_path = True
                         break
                     
-                    neighbors = self.nodes[current_node_id].edges.items()
+                    neighbors = list(self.nodes[current_node_id].edges.items())
                     probabilities = []
                     for neighbor_id, cost in neighbors:
                         if neighbor_id not in visited_id:
-                            tau = self.pheromone[frozenset({current_node_id, neighbor_id})] ** self.alpha
-                            eta = cost ** self.beta
+                            tau = self.pheromone[(current_node_id, neighbor_id)] ** self.alpha
+                            eta = (1 / cost) ** self.beta
                             probabilities.append(tau * eta)
                         else:
                             probabilities.append(0)
                                                 
                     total = sum(probabilities)
                     if total == 0: # no unvisited_id neighbors
+                        create_path = False
                         break
                     
                     probabilities = [p / total for p in probabilities]
@@ -91,42 +94,30 @@ class BasicGraph():
                     
                     path.append(next_node)
                     visited_id.add(next_node)
-                    
-                path_length = sum(np.linalg.norm(np.array(self.nodes[path[i]].pos) - np.array(self.nodes[path[i+1]].pos)) for i in range(len(path)-1))
-                all_paths.append(path)
-                all_path_lengths.append(path_length)
+                
+                if create_path:
+                    path_length = sum(np.linalg.norm(np.array(self.nodes[path[i]].pos) - np.array(self.nodes[path[i+1]].pos)) for i in range(len(path)-1))
+                    all_paths.append(path)
+                    all_path_lengths.append(path_length)
             
             # Update pheromone
-            for pheromone in self.pheromone.values():
-                pheromone *= (1 - self.evaporation_rate)
+            for k in self.pheromone:
+                self.pheromone[k] *= (1 - self.evaporation_rate)
             for path, length in zip(all_paths, all_path_lengths):
                 if path[-1] in self.exit_nodes:
                     for i in range(len(path) - 1):
-                        self.pheromone[frozenset({path[i], path[i+1]})] += 1 / length
+                        self.pheromone[(path[i], path[i+1])] += 1 / length
                         
         return self.pheromone
 
     def initialize_pheromones(self, initial_pheromone = 1.0):
         for i in self.nodes:
             for j in self.nodes[i].edges.keys():
-                self.pheromone[frozenset({i, j})] = initial_pheromone
+                self.pheromone[(i, j)] = initial_pheromone
         
     def initialize_ants_positions(self):
         ants_pos = []
         for _ in range(self.num_ants):
             ants_pos.append(np.random.choice(list(self.nodes.keys())))
         return ants_pos
-
-    def update_pheromones(self, ants_solutions):
-        # Evaporate existing pheromones
-        for i in self.pheromone.keys():
-            self.pheromone[i] *= (1 - self.evaporation_rate)
-
-        # Add new pheromones based on ants' solutions
-        for solution, cost in ants_solutions:
-            pheromone_deposit = 1 / cost
-            for i in range(len(solution) - 1):
-                from_node = solution[i]
-                to_node = solution[i + 1]
-                self.pheromone[frozenset({from_node, to_node})] += pheromone_deposit
                 

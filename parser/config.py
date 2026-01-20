@@ -113,16 +113,7 @@ class Config:
             ] 
             
     def parse_visualization_params(self, visualization):
-        self.window_name = visualization.get('window-name', 'Crowd Simulation')
-        self.visualization_dimensions = tuple(
-            int(dim) for dim in visualization.get('dimensions')
-        )            
-        
-        self.padding = int(visualization.get('padding'))
-        self.right_border = int(visualization.get('right-border'))
-        self.left_border = int(visualization.get('left-border'))
-        self.top_border = int(visualization.get('top-border'))
-        self.bottom_border = int(visualization.get('bottom-border'))
+        self.window_name = visualization.get('window-name', 'Crowd Simulation')        
         
         self.background_color = visualization.get('background-color', [0, 0, 0])
         self.agent_color = self.parse_color(visualization.get('agent-color', [0, 102, 255]), default=[0, 102, 255])

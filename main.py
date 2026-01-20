@@ -46,6 +46,12 @@ async def main_program(world, config, visualizer=None):
     
     print("Algorithm finished. Simulation started")
     while world.simulation_time < 30:  # Main executions
+        
+        if visualizer is not None:
+            if not visualizer.play:
+                await asyncio.sleep(0)
+                continue
+        
         start = time.time()
         world.simulation_start_time = start
         sim.update(dt)

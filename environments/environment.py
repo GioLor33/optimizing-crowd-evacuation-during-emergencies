@@ -10,6 +10,7 @@ class Environment:
         assert dimensions is not None, "Dimensions must be provided"
         assert dimensions[0] > 0 and dimensions[1] > 0, "Dimensions must be positive integers"
         self.__dimensions = dimensions       
+        
 
         self.walls = list()
         if walls != [None]:
@@ -23,20 +24,28 @@ class Environment:
         self.agents = []
         self.initial_agent_count = 0
         self.simulation_time = 0.0
+        self.algorithm = None
         
         #self.env.set_agents([AcoAgent(self.env, uid=i) for i in range(num_agents)])
         if isinstance(agents, list) and len(agents) == 2:
             num_agents, agent_class = agents
+            if agent_class == 'aco':
+                from aco_algorithm.acoAgent import AcoAgent
+                self.algorithm = "aco"
+            elif agent_class == 'boids':
+                from boids_algorithm.boidsAgent import BoidsAgent
+                self.algorithm = "boids"    
+            elif agent_class == 'pso-local':
+                from pso_algorithm.psoAgent import LocalPSOAgent
+                self.algorithm = "pso-local"
+
             for i in range(num_agents):
                 if agent_class == "aco":
-                    from aco_algorithm.acoAgent import AcoAgent
-                    self.add_agent(AcoAgent(self, uid=i))
+                    self.add_agent(AcoAgent(self, uid=i))     
                 elif agent_class == "boids":
-                    from boids_algorithm.boidsAgent import BoidsAgent
                     self.add_agent(BoidsAgent(self, uid=i, config=config))
                 elif agent_class == "pso-local":
-                    from pso_algorithm.psoAgent import PsoAgent
-                    self.add_agent(PsoAgent(self.env, uid=i))
+                    self.add_agent(LocalPSOAgent(self, uid=i))
                 else:
                     raise ValueError("Algorithm " + str(agent_class) + " not recognized.")
         elif agents is not None:
@@ -128,9 +137,34 @@ class Environment:
             raise ValueError("Safety exit positions must be provided as a tuple or as a list of tuples")
   
              
-    def get_safety_exits(self):
-        return self.exits
-    
+    def get_safety_exits(self, c=False):
+        if c:
+            reduced_exits = []
+            reduction_amount = 0.4
+            for exit in self.exits:
+                (x1, y1), (x2, y2) = exit
+
+                dir_vector = np.array([x2 - x1, y2 - y1], dtype=float)
+                length = np.linalg.norm(dir_vector)
+
+                dir_unit = dir_vector / length
+
+                new_start = (
+                    x1 + dir_unit[0] * reduction_amount,
+                    y1 + dir_unit[1] * reduction_amount
+                )
+                new_end = (
+                    x2 - dir_unit[0] * reduction_amount,
+                    y2 - dir_unit[1] * reduction_amount
+                )
+
+                reduced_exits.append((new_start, new_end))
+                
+        if c:
+            return reduced_exits
+        else:
+            return self.exits 
+        
     def get_safety_exits_number(self):
         return len(self.exits)
 
@@ -166,7 +200,7 @@ class Environment:
         
     def check_something_reached(self, prev_pos, pos, name):
         if name == "exit":
-            to_check = self.exits
+            to_check = self.get_safety_exits()
         elif name == "wall":
             to_check = self.walls
         else:
@@ -222,7 +256,7 @@ class Environment:
         t = np.clip(t, 0, 1)
         return A + t * AB
     
-    def has_reached_exit(self, agent, margin=0.5):
+    def has_reached_exit(self, agent, margin=0.1):
         for exit_seg in self.get_safety_exits():
             closest = self.closest_point_on_segment(agent.pos, exit_seg[0], exit_seg[1])
             if np.linalg.norm(agent.pos - closest) <= margin:

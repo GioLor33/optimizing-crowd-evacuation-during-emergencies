@@ -1,7 +1,7 @@
 algorithm: 
-  name: aco #[options: boids, pso-local, aco]
+  name: pso-local #[options: boids, pso-local, aco]
   time-step: 0.01
-  seed: 5
+  seed: 1
 
 algorithm-parameters:
 
@@ -22,9 +22,9 @@ algorithm-parameters:
 
   pso-local:  # PSO parameters
     neighborhood_radius: 10.0
-    inertia_weight: 0.6
-    cognitive_weight: 1.2
-    social_weight: 1.8
+    inertia_weight: 0.4
+    cognitive_weight: 1.0
+    social_weight: 1.5
 
   aco:
     num-ants-in-simulation: 250
@@ -42,7 +42,7 @@ algorithm-parameters:
 # TODO : get agents parameter shared among algorihtms here
 
 world:
-  type: empty          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: two_doors          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
 
   # following parameters are considered only if "type: custom"

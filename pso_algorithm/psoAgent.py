@@ -4,15 +4,15 @@ from collections import deque
 from environments.utils import segments_intersect
 
 class LocalPSOAgent(Agent):
-    def __init__(self, env_instance, uid, config, fitness_map):
+    def __init__(self, env_instance, uid):
         super().__init__(env_instance, uid)
         self.pbest_position = self.pos.copy()
         self.pbest_time = float('inf')  
-        self.neighborhood_radius = config.NEIGHBORHOOD_RADIUS
-        self.w = config.W
-        self.c1 = config.C1
-        self.c2 = config.C2
-        self.fitness_map = fitness_map
+        self.neighborhood_radius = None
+        self.w = None
+        self.c1 = None
+        self.c2 = None
+        self.fitness_map = None
 
     def update(self, agents_snapshot, env, dt, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5, tau=0.5):
 
@@ -37,12 +37,18 @@ class LocalPSOAgent(Agent):
         self.f_desired = pso_velocity
         # With driving force only if the exit is visible
         if self.target is None:
-            for exit in env.get_safety_exits():
+            for exit in env.get_safety_exits(c=True):
                 target_center = ( (exit[0][0] + exit[1][0]) / 2, (exit[0][1] + exit[1][1]) / 2 )
                 if self.is_visible(target_center, env.get_walls()):
-                    self.target = self.closest_point_on_segment(self.pos, exit[0], exit[1])
-                    self.f_desired = self.driving_force() 
-                    break
+                    p = self.closest_point_on_segment(self.pos, exit[0], exit[1])
+                    if self.target is None:
+                        self.target = p
+                    elif np.linalg.norm(self.pos - p) < np.linalg.norm(self.pos - self.target):
+                        self.target = p
+
+            if self.target is not None:
+                self.f_desired = self.driving_force() 
+                    
         else:  
             self.f_desired = self.driving_force()
        
@@ -61,6 +67,13 @@ class LocalPSOAgent(Agent):
         if fitness < self.pbest_time:
             self.pbest_time = fitness
             self.pbest_position = self.pos.copy()
+
+    def initialize(self, config, fitness_map):
+        self.neighborhood_radius = config.neighborhood_radius
+        self.w = config.W
+        self.c1 = config.C1
+        self.c2 = config.C2
+        self.fitness_map = fitness_map
 
 
     def _limit_vector(self, vector, max_val):

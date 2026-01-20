@@ -45,7 +45,7 @@ async def main_program(world, config, visualizer=None):
         exit(1)
     
     print("Algorithm finished. Simulation started")
-    while world.simulation_time < 30:  # Main executions
+    while world.simulation_time < max(10, config.num_agents*1.5):  # Main executions
         
         if visualizer is not None:
             if not visualizer.play:

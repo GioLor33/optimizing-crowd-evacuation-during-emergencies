@@ -7,11 +7,11 @@ algorithm-parameters:
 
   boids:              # used only if "algorithm-name: boids"
     weights:
-      seek: 8.6707
-      avoid: 2.8789
-      separation: 2.5753
-      alignment: 0.1000
-      cohesion: 0.1000
+      seek: 3.1224
+      avoid: 2.0973
+      separation: 0.5
+      alignment: 0.1
+      cohesion: 1.65599
     agents:
       max-speed: 1.0
       max-force: 0.1

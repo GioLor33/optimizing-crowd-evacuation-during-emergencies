@@ -1,6 +1,5 @@
 from environments.agent import Agent
 import numpy as np
-from environments.utils import segments_intersect, intersection_point, path_intersection_in_time
 
 class AcoAgent(Agent):
     def __init__(self, env_instance, uid):

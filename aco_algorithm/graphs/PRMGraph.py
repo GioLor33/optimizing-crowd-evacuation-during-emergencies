@@ -26,7 +26,6 @@ class PRMGraph(BasicGraph):
         
         super().__init__(env_instance, config.n, None, config.k_connectivity)
         self.create_graph()
-        print("PRM graph created with " + str(len(self.nodes)) + " nodes.")
     
     def create_graph(self):
         

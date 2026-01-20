@@ -17,6 +17,13 @@ class Agent:
         self.mass = np.random.uniform(45.0, 75.0)
         self.tau = 0.5  
         
+        # SFM parameters
+        self.A = 2.0
+        self.B = 0.08
+        self.k = 1.2e5
+        self.kappa = 2.4e5
+        self.tau = 0.5
+        
         self.f_desired = np.zeros(2)
         self.f_walls = np.zeros(2)
         self.f_agents = np.zeros(2)
@@ -33,39 +40,24 @@ class Agent:
     def get_position(self):
         return self.pos
     
-    def update(self, agent_snapshot, env, dt=0.05, A=2.0, B=0.08, k=1.2e5, kappa=2.4e5, tau=0.5): # TODO: global variables?
+    def update(self, agent_snapshot, env, dt):
        
         if self.target is None:
             raise ValueError("Agent " + str(self.id) + " has no target assigned. If no specific target is needed, set target to global target.")
 
-        # x, y = self.target
-        # closest_point = self.closest_point_on_segment(self.pos, x, y)
-        # direction = closest_point - self.pos
-        # dist_target = np.linalg.norm(direction)
-
-        # if dist_target > 1e-8:
-        #     direction /= dist_target # normalizing the direction to obtain a unit vector
-        # else:
-        #     direction = np.zeros(2)  # already at the target
-
-        # v_desired = direction * self.max_speed
         f_desired = self.driving_force()
 
         f_agents = self.repulsive_force(
-            agent_snapshot,
-            A=A, B=B, k=k, kappa=kappa
+            agent_snapshot
         )
 
         f_walls = self.obstacle_force(
-            env.get_walls(),
-            A=A, B=B, k=k, kappa=kappa
+            env.get_walls()
         )
 
         self.f_desired = f_desired
         self.f_walls = f_walls
         self.f_agents = f_agents
-
-        #total_force = f_desired + f_agents + f_walls
 
         self.vel += dt * (f_desired + (f_agents + f_walls) / self.mass)
 
@@ -88,7 +80,6 @@ class Agent:
         norm = np.linalg.norm(direction)
 
         if norm < 1e-8:
-            #direction = self.vel / (np.linalg.norm(self.vel) + 1e-8)  # avoid division by zero
             direction = np.zeros(2)
         else:
             direction /= norm
@@ -97,7 +88,7 @@ class Agent:
         return (v_des - self.vel) / self.tau
 
 
-    def repulsive_force(self, agents, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5):
+    def repulsive_force(self, agents):
         total = np.zeros(2)
         for other in agents:
             if other is self:
@@ -106,13 +97,12 @@ class Agent:
             total += self._repulsion_from_point(
                 p_j=other.pos,
                 v_j=other.vel,
-                r_j=r_j,
-                A=A, B=B, k=k, kappa=kappa
+                r_j=r_j
             )
         return total
 
 
-    def obstacle_force(self, walls, A=2., B=0.5, k=1.2e5, kappa=2.4e5):
+    def obstacle_force(self, walls):
         total = np.zeros(2)
 
         for (wA, wB) in walls:
@@ -131,14 +121,13 @@ class Agent:
             total += self._repulsion_from_point(
                 p_j = closest,
                 v_j = np.zeros(2),
-                r_j = 0.0,
-                A=A, B=B, k=k, kappa=kappa,
+                r_j = 0.0
             )
 
         return total
 
 
-    def _repulsion_from_point(self, p_j, v_j, r_j, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5 , r_i=None):
+    def _repulsion_from_point(self, p_j, v_j, r_j, r_i=None):
         d_vec = self.pos - p_j
         dist = np.linalg.norm(d_vec)
 
@@ -153,20 +142,17 @@ class Agent:
         t_ij = np.array([-n_ij[1], n_ij[0]])
         r_ij = self.radius + r_j
 
-        # g(x) function
-        # overlap = r_ij - dist
-        # g = max(overlap, 0.0)
         g = max(r_ij - dist, 0.0)
 
         # Exponential repulsive force
-        f_exp = A * np.exp((r_ij - dist) / B) * n_ij
+        f_exp = self.A * np.exp((r_ij - dist) / self.B) * n_ij
 
         # Pushing force
-        f_push = k * g * n_ij
+        f_push = self.k * g * n_ij
 
         # Sliding friction force
         dv_t = np.dot((v_j - self.vel), t_ij)
-        f_slide = kappa * g * dv_t * t_ij
+        f_slide = self.kappa * g * dv_t * t_ij
 
         return f_exp + f_push + f_slide
 

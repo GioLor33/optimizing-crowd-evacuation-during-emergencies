@@ -1,11 +1,11 @@
 algorithm: 
-  name: aco #[options: boids, pso, aco]
+  name: aco           # [options: boids, pso, aco]
   time-step: 0.01
   seed: 1
 
 algorithm-parameters:
 
-  boids: # Boids parameters, used only if "algorithm name: boids"
+  boids:              # used only if "algorithm-name: boids"
     weights:
       seek: 2.0
       avoid: 3.5
@@ -20,13 +20,13 @@ algorithm-parameters:
       min-separation: 15.0  # 3 * agent_size
       wall-avoid-distance: 10.0
 
-  pso:  # PSO parameters
+  pso:                # used only if "algorithm-name: pso"
     neighborhood_radius: 10.0
     inertia_weight: 0.4
     cognitive_weight: 1.0
     social_weight: 1.5
 
-  aco:
+  aco:                # used only if "algorithm-name: aco"  
     num-ants-in-simulation: 105
     num-iterations: 300
     alpha: 1
@@ -35,9 +35,9 @@ algorithm-parameters:
 
     # Graph parameters
     graph-type: grid   # options: ["grid", "PRM"]
-    n: 10             # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
-    m: 10             # used only if graph-type is "grid", number of columns
-    k-connectivity: 2 # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
+    n: 10              # number of rows if "graph-type"="grid", number of nodes if "graph-type"="PRM"
+    m: 10              # used only if graph-type is "grid", number of columns
+    k-connectivity: 2  # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
 
 # TODO : get agents parameter shared among algorihtms here
 

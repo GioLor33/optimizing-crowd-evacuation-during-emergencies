@@ -1,5 +1,5 @@
 from aco_algorithm.acoAgent import AcoAgent
-from environments.utils import path_intersection_in_time, segments_intersect_new
+from environments.utils import path_intersection_in_time
 import numpy as np
 from parser.config import Config
 
@@ -16,10 +16,6 @@ class CrowdSimulator():
             
         elif config.graph_type == "PRM":
             from aco_algorithm.graphs.PRMGraph import PRMGraph
-            # # TODO: add parameters N and k in config file
-            # dims = self.env.get_dimensions()
-            # N = max(dims[0] * dims[1] // 2, 10)
-            # k = max(min(N,5), N // 10)
             self.aco_env = PRMGraph(self.env, self.config)
             
         else:
@@ -34,37 +30,7 @@ class CrowdSimulator():
         )
         self.aco_env.run_aco()
         
-        # self.set_agents_next_target()
         self.set_agents_first_target()
-        
-    # def update(self, dt):
-  
-    #     N = len(self.env.agents)
-        
-    #     snapshot = list(self.env.agents)
-    #     for agent in self.env.agents:
-    #         # if agent.path is None:
-    #         #     # TODO: handle this case better
-    #         #     self.env.agents.remove(agent)
-    #         #     continue
-    #         prev_pos = agent.pos.copy()
-    #         agent.update(snapshot, self.env, dt)
-            
-    #         # check if target place is reached
-            
-    #         if len(agent.path) == 1: # if needed to avoid computing check_something_reached() at every iteration
-    #             if self.env.check_something_reached((prev_pos[0], prev_pos[1]), (agent.pos[0], agent.pos[1]), "exit") is not None:
-    #                 agent.node_reached()
-    #         elif np.linalg.norm(agent.pos - agent.target) < 1.0:
-    #             agent.node_reached()
-            
-    #         if agent.safe:
-    #             self.agents_escaped.append(agent.id)
-    #             self.env.agents.remove(agent)
-                
-    #     self.env.simulation_time += dt
-
-    #     return
     
     def update(self, dt):
   
@@ -118,12 +84,6 @@ class CrowdSimulator():
                 if agent.id == agent2.id or agent2.path is None:
                     continue
                 self.avoid_agents(agent, agent2, dt)
-        
-        # while len(env_agents) > 1: # if only one agent inside, it means it will not collide with anyone
-        #     agent1 = env_agents.pop()
-        #     agent2 = env_agents.pop()
-        #     #env_agents.add(self.avoid_agents(agent1, agent2, dt))
-        #     self.avoid_agents(agent1, agent2, dt)
             
         for agent in self.env.agents:
             if agent.path is None:
@@ -138,7 +98,6 @@ class CrowdSimulator():
         return
     
     def set_agents_first_target(self):
-        # n_nodes = len(self.aco_env.nodes)
         for agent in self.env.agents:
             self.change_target(agent)
     
@@ -210,7 +169,4 @@ class CrowdSimulator():
                 return
             else:
                 agent1.vel = agent1.vel * 0.5
-            # if self.vel[0] == 0 and self.vel[1] == 0:
-            #     break
-            #print(f"{self.vel}. The agent is in position {self.pos}, other agent in position {other_agent.pos}. Exiting the while loop")
-                
+    

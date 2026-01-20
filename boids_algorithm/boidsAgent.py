@@ -6,9 +6,9 @@ from environments.agent import Agent
 
 class BoidsAgent(Agent):
 
-    def __init__(self, environment, config, start_pos=None):
+    def __init__(self, environment, uid, config, start_pos=None):
         # Initialize parent (sets id, env, random pos, vel, etc.)
-        super().__init__(environment, id(self))
+        super().__init__(environment, uid)
         if start_pos is not None:
             self.pos = np.array(start_pos, dtype=float)
 
@@ -16,22 +16,16 @@ class BoidsAgent(Agent):
         self.acc = np.zeros(2)  # Agent does not init acc
 
         self.radius = getattr(config, 'agent_radius', 0.2)
-        self.base_speed = getattr(config, 'max_speed', 1.0)
-        self.base_force = getattr(config, 'max_force', 0.1)
+        self.base_speed = config.speed_limit
+        self.base_force = config.force_limit
 
-        self.vision_radius = getattr(config, 'vision_radius', 80)
-        self.min_separation = getattr(config, 'min_separation', 25)
+        self.vision_radius = config.vision_radius
+        self.min_separation = config.min_separation
         self.wall_avoid_dist = getattr(config, 'wall_avoid_dist', 0.5)
 
         self.exits = [(np.array(p1), np.array(p2)) for p1, p2 in self.env.get_safety_exits()]
 
-        self.weights = {
-            'seek': getattr(config, 'w_seek', 8.6707),
-            'avoid': getattr(config, 'w_avoid',2.8789),
-            'sep': getattr(config, 'w_separate', 2.5753),
-            'ali': getattr(config, 'w_align', 0.1000),
-            'coh': getattr(config, 'w_cohere',  0.1000)
-        }
+        self.weights = config.weights
 
         self.cur_speed = self.base_speed
         self.cur_force = self.base_force
@@ -66,9 +60,9 @@ class BoidsAgent(Agent):
         if agents_snapshot:
             sep, ali, coh = self._flock(agents_snapshot)
             self.f_agents = (
-                    sep * self.weights['sep'] +
-                    ali * self.weights['ali'] +
-                    coh * self.weights['coh']
+                    sep * self.weights['separate'] +
+                    ali * self.weights['align'] +
+                    coh * self.weights['cohere']
             )
         self.acc += self.f_desired
         self.acc += self.f_walls

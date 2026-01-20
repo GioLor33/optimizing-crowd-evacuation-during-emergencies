@@ -62,19 +62,19 @@ class Config:
         
     def parse_boids_algorithm_params(self):
         agent_params = self.config.get('algorithm-parameters', {}).get('boids', {}).get('agents', {})
-        self.AGENT_SIZE = float(agent_params.get('size'))
-        self.VISION_RADIUS = float(agent_params.get('vision-radius'))
-        self.MIN_SEPARATION = float(agent_params.get('min-separation'))
-        self.WALL_AVOID_DISTANCE = float(agent_params.get('wall-avoid-distance'))
-        self.SPEED_LIMIT = float(agent_params.get('max-speed'))
-        self.FORCE_LIMIT = float(agent_params.get('max-force'))
+        self.vision_radius = float(agent_params.get('vision-radius'))
+        self.min_separation = float(agent_params.get('min-separation'))
+        self.speed_limit = float(agent_params.get('max-speed'))
+        self.force_limit = float(agent_params.get('max-force'))
 
         weights = self.config.get('algorithm-parameters', {}).get('boids', {}).get('weights', {})
-        self.W_SEEK = float(weights.get('seek'))
-        self.W_AVOID = float(weights.get('avoid'))
-        self.W_SEPARATE = float(weights.get('separation'))
-        self.W_ALIGN = float(weights.get('alignment'))
-        self.W_COHERE = float(weights.get('cohesion'))
+        self.weights = {
+            'seek': float(weights.get('seek')),
+            'avoid': float(weights.get('avoid')),
+            'separate': float(weights.get('separation')),
+            'align': float(weights.get('alignment')),
+            'cohere': float(weights.get('cohesion'))
+        }
     
     def parse_aco_algorithm_params(self):
         aco = self.config.get('algorithm-parameters', {}).get('aco', {})

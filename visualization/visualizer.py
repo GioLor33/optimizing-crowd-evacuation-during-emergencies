@@ -325,12 +325,11 @@ class Visualizer:
             draw_text(f"> Cognitive weight: {self.config.C1}", desc_x, desc_y + 100, 20, self.text_color)
             draw_text(f"> Social weight: {self.config.C2}", desc_x, desc_y + 130, 20, self.text_color)
         elif self.algorithm == "boids":
-            draw_text(f"> Separation weight: {self.config.W_SEPARATE}", desc_x, desc_y + 40, 20, self.text_color)
-            draw_text(f"> Alignment weight: {self.config.W_ALIGN}", desc_x, desc_y + 70, 20, self.text_color)
-            draw_text(f"> Cohesion weight: {self.config.W_COHERE}", desc_x, desc_y + 100, 20, self.text_color)
-            draw_text(f"> Seek weight: {self.config.W_SEEK}", desc_x, desc_y + 130, 20, self.text_color)
-            draw_text(f"> Avoid weight: {self.config.W_AVOID}", desc_x, desc_y + 160, 20, self.text_color)    
-    
+            draw_text(f"> Separation weight: {self.config.weights['separate']}", desc_x, desc_y + 40, 20, self.text_color)
+            draw_text(f"> Alignment weight: {self.config.weights['align']}", desc_x, desc_y + 70, 20, self.text_color)
+            draw_text(f"> Cohesion weight: {self.config.weights['cohere']}", desc_x, desc_y + 100, 20, self.text_color)
+            draw_text(f"> Seek weight: {self.config.weights['seek']}", desc_x, desc_y + 130, 20, self.text_color)
+            draw_text(f"> Avoid weight: {self.config.weights['avoid']}", desc_x, desc_y + 160, 20, self.text_color)    
     def env_to_screen(self, env_position):
         starting_pos = (  # to center the environment in the window
             self.left_border + self.padding + (self.width - self.right_border - self.left_border - self.environment.get_width() * self.scale_env - self.padding * 2) / 2,
@@ -434,7 +433,6 @@ class Visualizer:
         ly_pos_curr = ly_pos - (btn_dim - text_dim) // 2
         self.btn_play_pos = [lx_pos_curr, ly_pos_curr, btn_dim, btn_dim]
         if self.play:
-            self.btn_pause_pos = [lx_pos_curr, ly_pos_curr, btn_dim, btn_dim]
             rl.DrawRectangleLinesEx(self.btn_play_pos, 1, RED)
             bar_width = btn_dim * 0.15
             bar_height = btn_dim * 0.6

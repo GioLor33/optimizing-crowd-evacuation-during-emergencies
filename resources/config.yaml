@@ -1,5 +1,5 @@
 algorithm: 
-  name: aco           # [options: boids, pso, aco]
+  name: boids           # [options: boids, pso, aco]
   time-step: 0.01
   seed: 1
 
@@ -7,18 +7,16 @@ algorithm-parameters:
 
   boids:              # used only if "algorithm-name: boids"
     weights:
-      seek: 2.0
-      avoid: 3.5
-      separation: 2.0
-      alignment: 0.5
-      cohesion: 0.5
+      seek: 8.6707
+      avoid: 2.8789
+      separation: 2.5753
+      alignment: 0.1000
+      cohesion: 0.1000
     agents:
-      size: 5.0             # is this for plotting?
-      max-speed: 10.0
-      max-force: 0.3
-      vision-radius: 80.0   # 80.0
-      min-separation: 15.0  # 3 * agent_size
-      wall-avoid-distance: 10.0
+      max-speed: 1.0
+      max-force: 0.1
+      vision-radius: 80.0   
+      min-separation: 25
 
   pso:                # used only if "algorithm-name: pso"
     neighborhood_radius: 10.0
@@ -47,7 +45,7 @@ world:
 
   # the following parameters are considered only if "type: custom"
   dimensions: [10,10]
-  num-agents: 50
+  num-agents: 20
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]

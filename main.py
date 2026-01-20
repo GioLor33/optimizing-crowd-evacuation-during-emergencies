@@ -24,7 +24,7 @@ async def main_program(world, config, visualizer=None):
     num_agents = config.num_agents 
     dt = config.dt
     
-    if config.algorithm == "boids-without-panic":
+    if config.algorithm == "boids":
         from boids_algorithm.crowdSimulator import CrowdSimulator
         sim = CrowdSimulator(world, config = config)
         print("Starting Boids algorithm simulation with " + str(num_agents) + " agents.")
@@ -58,7 +58,8 @@ async def main_program(world, config, visualizer=None):
         end = time.time()
         
         if (end - start) < dt:
-            time.sleep(dt - (end - start))
+            await asyncio.sleep(dt - (end - start))
+            #time.sleep(dt - (end - start))
             
         #time.sleep(0.5)
         
@@ -85,11 +86,12 @@ async def initialize_main(config : Config):
             dimensions=config.world_dimensions,
             exits=config.exits,
             walls=config.walls,
-            agents=[config.num_agents, config.algorithm]
+            agents=[config.num_agents, config.algorithm], 
+            config = config
             #agents_spawn_method=config.spawn_agent_method
         )
     else:
-        env = get_scenario_by_name(config.world_type, agents = [config.num_agents, config.algorithm])
+        env = get_scenario_by_name(config.world_type, agents = [config.num_agents, config.algorithm], config = config)
         if env is None:
             raise ValueError("Scenario " + str(config.world_type) + " not recognized.")
         

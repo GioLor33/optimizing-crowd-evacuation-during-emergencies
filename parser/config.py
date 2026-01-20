@@ -13,7 +13,7 @@ class Config:
         self.file_path = config_file
             
         self.algorithm = self.config.get('algorithm', {}).get('name')
-        if self.algorithm == 'boids-without-panic':
+        if self.algorithm == 'boids':
             self.parse_boids_algorithm_params()
         elif self.algorithm == 'aco':
             self.parse_aco_algorithm_params()

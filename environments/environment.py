@@ -4,7 +4,7 @@ import numpy as np
 import copy
 
 class Environment:
-    def __init__(self, name, dimensions=(10,10), walls=[None], exits=[None], agents = None):
+    def __init__(self, name, dimensions=(10,10), walls=[None], exits=[None], agents = None, config : Config = None):
         self.name = name
         
         assert dimensions is not None, "Dimensions must be provided"
@@ -31,9 +31,9 @@ class Environment:
                 if agent_class == "aco":
                     from aco_algorithm.acoAgent import AcoAgent
                     self.add_agent(AcoAgent(self, uid=i))
-                elif agent_class == "boids-without-panic":
+                elif agent_class == "boids":
                     from boids_algorithm.boidsAgent import BoidsAgent
-                    self.add_agent(BoidsAgent(self, uid=i))
+                    self.add_agent(BoidsAgent(self, uid=i, config=config))
                 elif agent_class == "pso-local":
                     from pso_algorithm.psoAgent import PsoAgent
                     self.add_agent(PsoAgent(self.env, uid=i))

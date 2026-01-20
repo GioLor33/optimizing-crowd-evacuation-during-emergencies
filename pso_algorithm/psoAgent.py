@@ -14,7 +14,7 @@ class LocalPSOAgent(Agent):
         self.c2 = None
         self.fitness_map = None
 
-    def update(self, agents_snapshot, env, dt, A=2.0, B=0.5, k=1.2e5, kappa=2.4e5, tau=0.5):
+    def update(self, agents_snapshot, env, dt):
 
         # PSO
         lbest_position = self._compute_lbest(agents_snapshot)
@@ -25,13 +25,11 @@ class LocalPSOAgent(Agent):
 
         # Pedestrian dynamics
         f_agents = self.repulsive_force(
-            agents_snapshot,
-            A=A, B=B, k=k, kappa=kappa
+            agents_snapshot
         )
 
         f_walls = self.obstacle_force(
-            env.get_walls(),
-            A=A, B=B, k=k, kappa=kappa
+            env.get_walls()
         )
 
         self.f_desired = pso_velocity

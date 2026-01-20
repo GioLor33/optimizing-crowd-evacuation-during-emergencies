@@ -5,10 +5,6 @@ from parser.config import Config
 import numpy as np
 from scipy.spatial import KDTree
 
-# IMPORTANT: per come è implementato ACO adesso, abbiamo che viene simulato per 100 iterazioni il movimento di ogni singolo agente
-# e alla fine di queste 100 iterazioni viene scelto il percorso migliore per ogni agente (quindi non si basa sui singoli nodi, 
-# ma sugli agenti)
-
 class PRMGraph(BasicGraph):
     def __init__(self, env_instance: Environment, config : Config):
         '''
@@ -47,11 +43,6 @@ class PRMGraph(BasicGraph):
         exits = self.env.get_safety_exits()
         exit_to_nodes = dict()
         for id, exit_points in enumerate(exits):
-            # exit_points = np.array(exit_points)
-            # mid = (exit_points[0] + exit_points[1]) / 2
-            # self.nodes[self.N + id] = Node(self.N + id, mid)
-            # self.exit_nodes.add(self.N + id)
-            # self.N += 1
             exit_points = np.array(exit_points)
             l = np.linalg.norm(exit_points[1] - exit_points[0])
             

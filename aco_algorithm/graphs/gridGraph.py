@@ -105,7 +105,7 @@ class GridGraph(BasicGraph):
                     if dist <= threshold:
                         if self.env.check_something_reached((node.pos[0], node.pos[1]), (new_node.pos[0], new_node.pos[1]), "wall") is None:
                             node.edges[new_node.id] = dist
-                            new_node.edges[node.id] = dist                  
+                            new_node.edges[node.id] = dist               
     
     def nodes_of(self, path_indices):
         return [np.array(self.nodes[i].pos) for i in path_indices]

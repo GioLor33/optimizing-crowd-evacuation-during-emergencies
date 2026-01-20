@@ -2,6 +2,8 @@ from pydoc import text
 from pyray import *
 from raylib import rl
 from raylib import ffi
+from raylib import rl
+from raylib import ffi
 from environments.environment import Environment
 from parser.config import Config
 import math
@@ -80,7 +82,16 @@ class Visualizer:
         
         if self.show_grid:
             self.draw_grid()
+
+        # Show buttons
+        self.simulation_control_panel()
+        self.display_buttons()
         
+        if self.show_grid:
+            self.draw_grid()
+        
+        if self.hasGraph and self.show_graph:
+            self.draw_graph()
         if self.hasGraph and self.show_graph:
             self.draw_graph()
             

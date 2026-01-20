@@ -33,7 +33,7 @@ async def main_program(world, config, visualizer=None):
         sim = CrowdSimulator(world, config = config)
         
         if visualizer is not None:
-            visualizer.associate_graph(sim.aco_env.nodes)
+            visualizer.associate_graph(sim.aco_env)
             visualizer.enable_graph()
             
         # print("Starting ACO algorithm simulation with " + str(num_agents) + " agents.")

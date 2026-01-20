@@ -10,6 +10,7 @@ class CrowdSimulator():
         self.env = environment_input
         self.agents_escaped = []
         
+        self.aco_env = None
         if config.graph_type == "grid":
             from aco_algorithm.graphs.gridGraph import GridGraph
             self.aco_env = GridGraph(self.env, self.config)

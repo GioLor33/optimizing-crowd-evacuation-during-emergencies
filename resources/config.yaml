@@ -32,10 +32,10 @@ algorithm-parameters:
 # TODO : get agents parameter shared among algorihtms here
 
 world:
-  type: custom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: slalom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
   dimensions: [10,10]
-  num-agents: 100
+  num-agents: 50
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]

@@ -3,8 +3,6 @@ import asyncio
 import time
 import matplotlib
 matplotlib.use('TkAgg')
-
-
 from visualization.visualizer import Visualizer
 from environments.environment import Environment
 from parser.config import Config

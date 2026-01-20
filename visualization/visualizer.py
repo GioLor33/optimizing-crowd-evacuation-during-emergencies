@@ -142,22 +142,23 @@ class Visualizer:
             a_pos = agent.get_position()
             a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
             
-            draw_circle(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]), 
-                agent.radius * self.scale_env,  # radius scaled to environment size
-                [250, 250, 250, 20]
-            )
+            # draw_circle(
+            #     int(a_pos_screen[0]),
+            #     int(a_pos_screen[1]),
+            #     agent.radius * self.scale_env,  # radius scaled to environment size
+            #     [250, 250, 250, 20]
+            # )
             
             # if agent.path is not None:
             #     color = self.agents_color
             # else:
             #     color = RED
+            radius_screen = agent.radius * self.scale_env
             color = self.agents_color
             draw_circle(
-                int(a_pos_screen[0]), 
-                int(a_pos_screen[1]), 
-                2,  # radius scaled to environment size
+                int(a_pos_screen[0]),
+                int(a_pos_screen[1]),
+                max(2, radius_screen),  # Ensure it's at least 2 pixels visible
                 color
             )
             
@@ -198,7 +199,7 @@ class Visualizer:
                 int(a_pos_screen[1] + force_wall_screen[1]),
                 BLUE
             )
-            
+
         
     def add_title(self):
         # the title is centered at the top of the window

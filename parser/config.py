@@ -115,7 +115,6 @@ class Config:
         self.window_name = visualization.get('window-name', 'Crowd Simulation')        
         
         self.background_color = visualization.get('background-color', [0, 0, 0])
-        self.agent_color = self.parse_color(visualization.get('agent-color', [0, 102, 255]), default=[0, 102, 255])
         self.wall_color = self.parse_color(visualization.get('wall-color', [200, 200, 200]), default=[200, 200, 200])
         self.exit_color = self.parse_color(visualization.get('exit-color', [57, 255, 20]), default=[57, 255, 20])
         self.title_color = self.parse_color(visualization.get('title-color', [255, 0, 0]), default=[255, 0, 0])

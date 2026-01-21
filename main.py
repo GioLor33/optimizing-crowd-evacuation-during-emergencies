@@ -12,7 +12,10 @@ if config.visualization:
 
 async def visualization_loop(visualizer):
     assert isinstance(visualizer, Visualizer)
-    while visualizer.window_is_open() and visualizer.on:
+    while visualizer.window_is_open():
+        while not visualizer.on:
+            visualizer.spawn_algorithm_loading()
+            await asyncio.sleep(0)
         visualizer.create_drawing()
         await asyncio.sleep(0)  # yield control
 
@@ -42,10 +45,14 @@ async def main_program(world, config, visualizer=None):
         sim = CrowdSimulator(world, config = config)
     else:
         raise ValueError("Algorithm " + str(config.algorithm) + " not recognized.")
-        exit(1)
     
-    while world.simulation_time < max(10, config.num_agents*1.5):  # Main executions
+    print("Simulation started")
+    if visualizer is not None:
+        visualizer.on = True
+        await asyncio.sleep(0)
         
+    while world.simulation_time < max(10, config.num_agents*1.5):  # Main executions
+
         if visualizer is not None:
             if not visualizer.play:
                 await asyncio.sleep(0)
@@ -65,10 +72,11 @@ async def main_program(world, config, visualizer=None):
         
     if visualizer is not None:
         visualizer.play = False
-    return world.simulation_time, config.num_agents - len(sim.agents_escaped)
     
-    # TODO: display "Simulation Complete" message on visualizer
-        
+    print("Simulation ended: " + str(len(sim.agents_escaped)) + " agents escaped in " + str(world.simulation_time) + " seconds.")
+    
+    return world.simulation_time, config.num_agents - len(sim.agents_escaped)
+            
         
 async def initialize_main():
     
@@ -100,9 +108,7 @@ async def initialize_main():
         )
 
     else:
-        results = await main_program(env, config)
-        
-    return results
+        return await main_program(env, config)
 
 if __name__ == "__main__":
     asyncio.run(initialize_main())

@@ -125,7 +125,6 @@ class GridFitness:
         
         self.distance_map = np.full((self.grid_width, self.grid_height), np.inf)
         self._compute_distance_map()
-        # self.plot_fitness()
           
 
     # Bresenham's line algorithm to draw walls on the grid
@@ -224,24 +223,6 @@ class GridFitness:
             exit_y = (y1 + y2)/2
             ei, ej = self.world_to_grid((exit_x, exit_y))
             self.grid[ei, ej] = 0  
-
-    def plot_fitness(self):
-        import matplotlib.pyplot as plt
-
-        data = self.distance_map.copy()
-
-        # Walls
-        data[self.grid == 1] = -1
-
-        plt.figure(figsize=(8, 8))
-        cmap = plt.cm.viridis
-        cmap.set_under('black')   
-
-        plt.imshow(data.T, origin='upper', cmap=cmap, vmin=0)
-
-        plt.colorbar(label="Distance to Nearest Exit")
-        plt.title("Fitness Distance Map")
-        plt.show()
 
 
  

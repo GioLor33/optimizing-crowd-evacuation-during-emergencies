@@ -9,10 +9,10 @@ class CrowdSimulator:
         self.env = environment_input
         self.agents_escaped = []
         
-        fitness_map = GridFitness(self.env)
+        self.fitness_map = GridFitness(self.env)
         for agent in self.env.agents:
             if isinstance(agent, LocalPSOAgent):
-                agent.initialize(config, fitness_map)
+                agent.initialize(config, self.fitness_map)
 
     def update(self, dt):
         snapshot = list(self.env.agents)

@@ -2,11 +2,10 @@ from pydoc import text
 from pyray import *
 from raylib import rl
 from raylib import ffi
-from raylib import rl
-from raylib import ffi
 from environments.environment import Environment
 from parser.config import Config
 import math
+import numpy as np
 
 class Visualizer:
     def __init__(self, environment, config: Config):
@@ -16,7 +15,7 @@ class Visualizer:
         self.btn_pause_pos = None
         self.restart = False
         
-        self.on = True
+        self.on = False
         self.width = 1200
         self.height = 700
         
@@ -29,7 +28,6 @@ class Visualizer:
         self.background_color = config.background_color   
         self.exits_color = config.exit_color
         self.walls_color = config.wall_color
-        self.agents_color = config.agent_color
         self.text_color = config.text_color
         self.title_color = config.title_color
         
@@ -48,10 +46,16 @@ class Visualizer:
         self.show_pheromone_track = False
         self.btn_showPheromoneTrack_pos = None
         
+        self.show_target_node = False
+        self.btn_showTargetNode_pos = None
+        
+        self.show_fitness_map = True
+        self.btn_showFitnessMap_pos = None
+        
         assert isinstance(environment, Environment)
         self.define_environment(environment)
         
-        init_window(self.width, self.height, config.window_name)
+        init_window(self.width, self.height, self.config.window_name)
         
     def create_drawing(self):
         
@@ -66,6 +70,10 @@ class Visualizer:
                 self.play = not self.play
             if self.btn_showPheromoneTrack_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_showPheromoneTrack_pos):
                 self.show_pheromone_track = not self.show_pheromone_track
+            if self.btn_showTargetNode_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_showTargetNode_pos):
+                self.show_target_node = not self.show_target_node
+            if self.btn_showFitnessMap_pos is not None and rl.CheckCollisionPointRec(mouse_pos, self.btn_showFitnessMap_pos):
+                self.show_fitness_map = not self.show_fitness_map
             
         begin_drawing()
         
@@ -98,11 +106,37 @@ class Visualizer:
         if self.hasGraph and self.show_pheromone_track:
             self.draw_acoPheromone_heatmap()
             
+        if self.algorithm == "pso" and self.show_fitness_map:
+            self.draw_fitness_map()
+            
         self.draw_agents()
         self.add_env_description()        
         self.add_algorithm_info()
         
         self.add_title()
+        
+        end_drawing()
+        
+    def spawn_algorithm_loading(self):
+        begin_drawing()
+        
+        clear_background(self.background_color)
+        
+        font_size = 40
+        draw_text(
+            f"Running {self.algorithm.upper()} algorithm offline ...",
+            300,
+            (self.height - font_size) // 2,
+            font_size,
+            YELLOW
+        )
+        draw_text(
+            "Processing data for the simulation",
+            430,
+            (self.height - font_size) // 2 + 60,
+            int(font_size * 0.6),
+            WHITE
+        )
         
         end_drawing()
         
@@ -114,8 +148,6 @@ class Visualizer:
                             (self.width - self.right_border - self.left_border - self.padding * 2) / x,
                             (self.height - self.bottom_border - self.top_border - self.padding * 2) / y
                             )
-        print()
-        print("Environment scale in visualizer set to: " + str(self.scale_env))
         
     def draw_environment(self):        
         if self.environment is not None:
@@ -188,10 +220,27 @@ class Visualizer:
         for agent in agents:
             a_pos = agent.get_position()
             a_pos_screen = self.env_to_screen((a_pos[0], a_pos[1]))
-            color = agent.color
+            
+            if self.show_target_node:
+                target_pos = agent.target
+                if target_pos is not None:
+                    x, y = self.env_to_screen((target_pos[0], target_pos[1]))
+                    x = int(x)
+                    y = int(y)
+                    size = 4  # half-length of the cross
+                    color_full = [color[0], color[1], color[2], 255]
+                    
+                    # Draw two lines forming an X
+                    draw_line(x - size, y - size, x + size, y + size, color_full)
+                    draw_line(x - size, y + size, x + size, y - size, color_full)
             
             if agent.fail:
                 color = RED
+                
+            if self.algorithm == "pso" and self.show_fitness_map:
+                color = WHITE
+            else:
+                color = agent.color
             
             draw_circle(
                 int(a_pos_screen[0]), 
@@ -217,16 +266,7 @@ class Visualizer:
                 int(a_pos_screen[1] + velocity_screen[1]),
                 [color[0], color[1], color[2], 255]
             )
-            
-            # target_pos = agent.target
-            # if target_pos is not None:
-            #     target_pos_screen = self.env_to_screen((target_pos[0], target_pos[1]))
-            #     draw_circle(
-            #         int(target_pos_screen[0]),
-            #         int(target_pos_screen[1]),
-            #         4,
-            #         [color[0], color[1], color[2], 255]
-            #     )
+
             
         
     def add_title(self):
@@ -249,10 +289,16 @@ class Visualizer:
         draw_text("Legend:", lx_pos, ly_pos, 20, self.text_color)
         y_after_first += 40
         
-        draw_circle(lx_pos + 5, ly_pos + y_after_first + 10, 5, self.agents_color)
-        draw_line(lx_pos + 5, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, self.agents_color)
+        draw_circle(lx_pos + 5, ly_pos + y_after_first + 10, 5, YELLOW)
+        draw_line(lx_pos + 5, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, YELLOW)
         draw_text("Agent", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
         y_after_first += 30
+        
+        if self.show_target_node:
+            draw_line(lx_pos, ly_pos + y_after_first + 10 - length_symbol//2, lx_pos + length_symbol, ly_pos + y_after_first + 10 + length_symbol//2, YELLOW)
+            draw_line(lx_pos, ly_pos + y_after_first + 10 + length_symbol//2, lx_pos + length_symbol, ly_pos + y_after_first + 10 - length_symbol//2, YELLOW)
+            draw_text("Target Node", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+            y_after_first += 30
         
         draw_line(lx_pos, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, self.exits_color)
         draw_line(lx_pos, ly_pos + y_after_first + 10 - 5, lx_pos, ly_pos + y_after_first +10 + 5, self.exits_color)
@@ -278,6 +324,42 @@ class Visualizer:
         if self.hasGraph and self.show_graph:
             draw_line(lx_pos, ly_pos + y_after_first + 10, lx_pos + length_symbol, ly_pos + y_after_first + 10, [255, 105, 180, 100])
             draw_text("ACO Graph", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+            y_after_first += 30
+            
+        if self.hasGraph and self.show_pheromone_track:
+            cell_width = length_symbol
+            cell_height = 20  # or any height you like
+            num_steps = cell_width  # one color per pixel horizontally
+
+            for i in range(num_steps):
+                t = i / (num_steps - 1)  # normalized 0..1
+                color = self.colormap(t)
+                # Draw a vertical line for each step to simulate gradient
+                draw_line(
+                    lx_pos + i, ly_pos + y_after_first,
+                    lx_pos + i, ly_pos + y_after_first + cell_height,
+                    color
+                )
+            
+            draw_text("ACO Pheromone", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
+            y_after_first += 30
+            
+        if self.algorithm == "pso" and self.show_fitness_map:
+            cell_width = length_symbol
+            cell_height = 20  # or any height you like
+            num_steps = cell_width  # one color per pixel horizontally
+
+            for i in range(num_steps):
+                t = i / (num_steps - 1)  # normalized 0..1
+                color = self.colormap(t)
+                # Draw a vertical line for each step to simulate gradient
+                draw_line(
+                    lx_pos + i, ly_pos + y_after_first,
+                    lx_pos + i, ly_pos + y_after_first + cell_height,
+                    color
+                )
+            
+            draw_text("PSO Fitness Map", lx_pos + length_symbol + padding_length_symbol_and_text, ly_pos + y_after_first, 20, self.text_color)
             y_after_first += 30
             
         
@@ -329,7 +411,8 @@ class Visualizer:
             draw_text(f"> Alignment weight: {self.config.weights['align']}", desc_x, desc_y + 70, 20, self.text_color)
             draw_text(f"> Cohesion weight: {self.config.weights['cohere']}", desc_x, desc_y + 100, 20, self.text_color)
             draw_text(f"> Seek weight: {self.config.weights['seek']}", desc_x, desc_y + 130, 20, self.text_color)
-            draw_text(f"> Avoid weight: {self.config.weights['avoid']}", desc_x, desc_y + 160, 20, self.text_color)    
+            draw_text(f"> Avoid weight: {self.config.weights['avoid']}", desc_x, desc_y + 160, 20, self.text_color) 
+               
     def env_to_screen(self, env_position):
         starting_pos = (  # to center the environment in the window
             self.left_border + self.padding + (self.width - self.right_border - self.left_border - self.environment.get_width() * self.scale_env - self.padding * 2) / 2,
@@ -376,7 +459,7 @@ class Visualizer:
                 start_pos[1],
                 end_pos[0],
                 end_pos[1],
-                [200, 200, 200, 40]
+                [200, 200, 200, 20]
             )
         # horizontal lines
         for y in range(int(dim[1]) + 1):
@@ -387,7 +470,7 @@ class Visualizer:
                 start_pos[1],
                 end_pos[0],
                 end_pos[1],
-                [200, 200, 200, 40]
+                [200, 200, 200, 20]
             )
         
     def draw_graph(self):
@@ -488,16 +571,28 @@ class Visualizer:
         
         if self.algorithm == "aco":
             color = WHITE if self.show_graph else GRAY
-            self.btn_showGraph_pos = [lx_pos_current, ly_pos, 105, btn_height]
+            self.btn_showGraph_pos = [lx_pos_current, ly_pos, 100, btn_height]
             rl.DrawText(b'ACO Graph', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
             rl.DrawRectangleLinesEx(self.btn_showGraph_pos, 1, color)
             ly_pos += btn_height + padding_in_between
             lx_pos_current = lx_pos
             
             color = WHITE if self.show_pheromone_track else GRAY
-            self.btn_showPheromoneTrack_pos = [lx_pos_current, ly_pos, 165, btn_height]
-            rl.DrawText(b'Pheromone Track', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
+            self.btn_showPheromoneTrack_pos = [lx_pos_current, ly_pos, 100, btn_height]
+            rl.DrawText(b'Pheromone', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
             rl.DrawRectangleLinesEx(self.btn_showPheromoneTrack_pos, 1, color)
+            
+            color = WHITE if self.show_target_node else GRAY
+            lx_pos_current += 100 + padding_in_between
+            self.btn_showTargetNode_pos = [lx_pos_current, ly_pos, 85, btn_height]
+            rl.DrawText(b'Targets', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
+            rl.DrawRectangleLinesEx(self.btn_showTargetNode_pos, 1, color)
+            
+        if self.algorithm == "pso":
+            color = WHITE if self.show_fitness_map else GRAY
+            self.btn_showFitnessMap_pos = [lx_pos_current, ly_pos, 110, btn_height]
+            rl.DrawText(b'Fitness Map', lx_pos_current + 10, ly_pos + (btn_height - text_height)//2, text_height, color)
+            rl.DrawRectangleLinesEx(self.btn_showFitnessMap_pos, 1, color)
         
                 
     def draw_acoPheromone_heatmap(self):
@@ -561,3 +656,58 @@ class Visualizer:
             b = 0
 
         return [r, g, b, 125]
+    
+    def draw_fitness_map(self):
+        # size of each cell on screen
+        fitnessGrid = self.environment.agents[0].fitness_map
+        width, height = fitnessGrid.grid.shape
+        
+        env_width, env_height = self.environment.get_dimensions()
+        cell_width = (self.scale_env * env_width) / width
+        cell_height = (self.scale_env * env_height) / height
+
+        for i in range(width):
+            for j in range(height):
+                color = self.distance_to_color(fitnessGrid.distance_map[i, j], distance_map=fitnessGrid.distance_map)
+                # draw rectangle for this cell
+                draw_rectangle(
+                    int(i * cell_width) + self.env_to_screen((0, 0))[0],
+                    int(j * cell_height) + self.env_to_screen((0, 0))[1],
+                    int(cell_width),
+                    int(cell_height),
+                    color
+                )
+    
+    def distance_to_color(self, d, vmin=None, vmax=None, distance_map=None):
+        """Map a distance value to a color using normalized colormap, ignoring walls and infinities."""
+        if not np.isfinite(d):
+            return [200, 200, 200, 20]  # Light gray for finite distances
+
+        if distance_map is not None:
+            # Mask out walls (<0) and infinities
+            valid = distance_map[(distance_map >= 0) & np.isfinite(distance_map)]
+            if vmin is None:
+                vmin = valid.min() if valid.size > 0 else 0
+            if vmax is None:
+                vmax = valid.max() if valid.size > 0 else 1
+        else:
+            if vmin is None:
+                vmin = 0
+            if vmax is None:
+                vmax = max(1.0, d)
+
+        # Avoid division by zero
+        if vmax == vmin:
+            t = 1.0
+        else:
+            t = (d - vmin) / (vmax - vmin)
+            t = max(0.0, min(1.0, t))  # clamp
+
+        # Use your colormap (or matplotlib viridis)
+        r, g, b, a = self.colormap(t)
+        return [r, g, b, 50]
+    
+
+
+
+

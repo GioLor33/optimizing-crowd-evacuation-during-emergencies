@@ -37,15 +37,13 @@ algorithm-parameters:
     m: 10              # used only if graph-type is "grid", number of columns
     k-connectivity: 2  # k-connectivity. If "graph-type"="grid" only options are "1"->4-connectivity, "2"->8-connectivity
 
-# TODO : get agents parameter shared among algorihtms here
-
 world:
-  type: two_doors          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
+  type: slalom          # options: ["bottleneck", "two_doors", "slalom", "empty", "custom"]
   name: test_environment
 
   # the following parameters are considered only if "type: custom"
   dimensions: [10,10]
-  num-agents: 20
+  num-agents: 50
   # spawn: random       # options: ["random", "densed"]
   exits:
     - [[10, 4], [10, 6]]
@@ -57,7 +55,6 @@ visualization:
   window-name: "Crowd Simulation"
    
   background-color: [0, 0, 0]
-  agent-color: [243, 255, 20]
   wall-color: [200, 200, 200]
   exit-color: [57, 255, 20]
   title-color: [255, 0, 0]
